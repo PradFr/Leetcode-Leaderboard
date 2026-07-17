@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+
+{% block title %}Classes — LeetCode Leaderboard{% endblock %}
+{% block page_title %}Classes{% endblock %}
+
+{% block topbar_actions %}
+  <a href="#" class="btn btn-primary btn-sm" data-open-modal="modal-create-class">+ New Class</a>
+{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+  <div class="page-header-left">
+    <h1>All Classes</h1>
+    <p>{{ classes | length }} class{{ 'es' if classes | length != 1 }} total</p>
+  </div>
+</div>
+
+{% if classes %}
+<div class="classes-grid">
+  {% for item in classes %}
+  <a href="/admin/classes/{{ item.cls.id }}" class="class-card">
+    <div class="class-card-header">
+      <div class="class-icon">⬡</div>
+      <div style="flex:1;min-width:0">
+        <div class="class-name">{{ item.cls.name }}</div>
+        <div style="font-size:0.72rem;color:var(--text-muted);margin-top:2px;">
+          Created {{ item.cls.created_at.strftime('%b %d, %Y') if item.cls.created_at else 'recently' }}
+        </div>
+      </div>
+    </div>
+
+    {% if item.cls.description %}
+    <div class="class-desc">{{ item.cls.description }}</div>
+    {% endif %}
+
+    <div class="class-meta">
+      <div class="class-meta-item">
+        <span>◎</span>
+        <span>{{ item.student_count }} student{{ 's' if item.student_count != 1 }}</span>
+      </div>
+      {% if item.top_user %}
+      <div class="class-meta-item" style="margin-left:auto;color:var(--accent)">
+        <span>🏆</span>
+        <span>{{ item.top_user.display_name or item.top_user.leetcode_username or 'Student' }}</span>
+      </div>
+      {% endif %}
+    </div>
+
+    {% if item.invite and item.invite.is_active %}
+    <div style="display:flex;align-items:center;gap:6px;font-size:0.75rem;color:var(--green)">
+      <span>🔗</span> Invite link active
+    </div>
+    {% else %}
+    <div style="display:flex;align-items:center;gap:6px;font-size:0.75rem;color:var(--text-muted)">
+      <span>○</span> No invite link yet
+    </div>
+    {% endif %}
+  </a>
+  {% endfor %}
+</div>
+
+{% else %}
+<div class="empty-state">
+  <div class="empty-icon">⬡</div>
+  <h3>No classes yet</h3>
+  <p>Create your first class and share the invite link with students.</p>
+  <a href="#" class="btn btn-primary" data-open-modal="modal-create-class">+ Create First Class</a>
+</div>
+{% endif %}
+
+<!-- Create Class Modal -->
+<div class="modal-backdrop" id="modal-create-class">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 class="modal-title">Create New Class</h3>
+      <button class="modal-close" data-close-modal="modal-create-class">✕</button>
+    </div>
+    <form action="/admin/classes" method="post">
+      <div class="form-group">
+        <label class="form-label" for="new-class-name">Class Name *</label>
+        <input id="new-class-name" class="form-control" type="text" name="name"
+               placeholder="e.g. CS101 — Spring 2025" required autofocus>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="new-class-desc">Description</label>
+        <textarea id="new-class-desc" class="form-control" name="description"
+                  placeholder="Optional description of this class…"></textarea>
+      </div>
+      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:4px;">
+        <button type="button" class="btn btn-secondary" data-close-modal="modal-create-class">Cancel</button>
+        <button type="submit" class="btn btn-primary">Create Class</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+{% endblock %}
