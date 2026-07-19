@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}LeetCode Leaderboard{% endblock %}</title>
+  <meta name="description" content="{% block description %}Track and rank LeetCode progress across classes{% endblock %}">
+  <link rel="stylesheet" href="/static/css/main.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏆</text></svg>">
+  {% block extra_head %}{% endblock %}
+</head>
+<body>
+
+{% block body %}
+<div class="app-shell">
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-icon">LC</div>
+      <div class="logo-text">
+        Leaderboard
+        <span>LeetCode Tracker</span>
+      </div>
+    </div>
+
+    <nav class="sidebar-nav">
+      {% if user and user.role == 'admin' %}
+        <span class="nav-section-label">Admin</span>
+        <a href="/admin" class="nav-link {% if request.url.path == '/admin' %}active{% endif %}">
+          <span class="nav-icon">⊞</span> Dashboard
+        </a>
+        <a href="/admin/classes" class="nav-link {% if '/admin/classes' in request.url.path %}active{% endif %}">
+          <span class="nav-icon">⬡</span> Classes
+        </a>
+        <a href="/admin/students" class="nav-link {% if '/admin/students' in request.url.path %}active{% endif %}">
+          <span class="nav-icon">◎</span> Students
+        </a>
+      {% else %}
+        <span class="nav-section-label">My Space</span>
+        <a href="/student" class="nav-link {% if request.url.path == '/student' %}active{% endif %}">
+          <span class="nav-icon">⊞</span> Dashboard
+        </a>
+      {% endif %}
+    </nav>
+
+    <div class="sidebar-footer">
+      {% if user %}
+      <div class="user-chip">
+        <div class="avatar avatar-sm" data-avatar="{{ user.full_name or user.email }}"></div>
+        <div class="user-info">
+          <div class="user-name">{{ user.full_name or user.email.split('@')[0] }}</div>
+          <div class="user-role">{{ user.role | capitalize }}</div>
+        </div>
+      </div>
+      <form action="/logout" method="post" style="margin-top:6px">
+        <button type="submit" class="btn btn-ghost btn-sm w-full" style="justify-content:flex-start">
+          <span>⎋</span> Sign Out
+        </button>
+      </form>
+      {% endif %}
+    </div>
+  </aside>
+
+  <!-- Main Content -->
+  <div class="main-content">
+    <header class="topbar">
+      <div class="topbar-title">{% block page_title %}{% endblock %}</div>
+      <div class="topbar-actions">{% block topbar_actions %}{% endblock %}</div>
+    </header>
+
+    <main class="page-body">
+      {% block content %}{% endblock %}
+    </main>
+  </div>
+
+</div>
+{% endblock %}
+
+<script src="/static/js/app.js"></script>
+{% block extra_scripts %}{% endblock %}
+</body>
+</html>
