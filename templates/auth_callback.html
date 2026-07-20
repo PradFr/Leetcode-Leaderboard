@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Verifying… — LeetCode Leaderboard</title>
+  <link rel="stylesheet" href="/static/css/main.css">
+</head>
+<body>
+<div class="verify-page">
+  <div class="verify-card" id="status-card">
+    <!-- Content injected by JS below -->
+    <div class="verify-icon-wrap" id="icon">⏳</div>
+    <h1 id="title" style="font-size:1.2rem;font-weight:700;margin-bottom:8px">Verifying…</h1>
+    <p id="message" style="color:var(--text-secondary);font-size:0.88rem;margin-bottom:24px;line-height:1.6">
+      Please wait while we confirm your email.
+    </p>
+    <div id="action-area"></div>
+  </div>
+</div>
+
+<script src="/static/js/app.js"></script>
+<script>
+(async function() {
+  const icon    = document.getElementById('icon');
+  const title   = document.getElementById('title');
+  const msg     = document.getElementById('message');
+  const actions = document.getElementById('action-area');
+
+  function setSuccess() {
+    icon.textContent = '✅';
+    icon.style.background = 'var(--green-dim)';
+    icon.style.borderColor = 'rgba(63,185,80,0.25)';
+    title.textContent = 'Email Verified!';
+    msg.textContent = 'Your account is confirmed. Redirecting you to your dashboard…';
+    actions.innerHTML = '<a href="/" class="btn btn-primary w-full" style="justify-content:center">Go to Dashboard →</a>';
+  }
+
+  function setExpired(detail) {
+    icon.textContent = '🔗';
+    icon.style.background = 'var(--red-dim)';
+    icon.style.borderColor = 'rgba(248,81,73,0.25)';
+    title.style.color = 'var(--red)';
+    title.textContent = 'Link Expired';
+    msg.innerHTML = `
+      <span style="color:var(--text-secondary)">
+        This verification link has expired — Supabase links are valid for <strong>1 hour</strong>.
+        ${detail ? '<br><span style="font-size:0.78rem;color:var(--text-muted)">(' + detail + ')</span>' : ''}
+      </span>
+    `;
+    actions.innerHTML = `
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <a href="/verify-pending" class="btn btn-primary w-full" style="justify-content:center">
+          ↺ Request a New Link
+        </a>
+        <a href="/login" class="btn btn-secondary w-full" style="justify-content:center">
+          ← Back to Sign In
+        </a>
+      </div>
+    `;
+  }
+
+  function setError(detail) {
+    icon.textContent = '❌';
+    icon.style.background = 'var(--red-dim)';
+    icon.style.borderColor = 'rgba(248,81,73,0.25)';
+    title.style.color = 'var(--red)';
+    title.textContent = 'Verification Failed';
+    msg.innerHTML = `<span style="color:var(--text-secondary)">${detail || 'Something went wrong.'}</span>`;
+    actions.innerHTML = `
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <a href="/verify-pending" class="btn btn-secondary w-full" style="justify-content:center">↺ Resend Email</a>
+        <a href="/login" class="btn btn-ghost w-full" style="justify-content:center">← Back to Sign In</a>
+      </div>
+    `;
+  }
+
+  // Parse the URL hash — Supabase puts token or error params here
+  const hash = window.location.hash.substring(1);
+  const params = new URLSearchParams(hash);
+
+  // Also check query params (some Supabase setups use ?error=...)
+  const qp = new URLSearchParams(window.location.search);
+
+  const error = params.get('error') || qp.get('error');
+  const errorDesc = params.get('error_description') || qp.get('error_description') || '';
+  const accessToken = params.get('access_token');
+  const refreshToken = params.get('refresh_token');
+
+  if (error) {
+    const isExpired = error === 'access_denied' ||
+                      errorDesc.toLowerCase().includes('expired') ||
+                      errorDesc.toLowerCase().includes('otp');
+    if (isExpired) {
+      setExpired(errorDesc);
+    } else {
+      setError(errorDesc || error);
+    }
+    return;
+  }
+
+  if (!accessToken) {
+    // No hash at all — user might have navigated here directly
+    setError('No verification token found. Please use the link from your email.');
+    return;
+  }
+
+  // Send token to backend to establish session
+  try {
+    const res = await fetch('/auth/set-session', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ access_token: accessToken, refresh_token: refreshToken }),
+    });
+    const data = await res.json();
+
+    if (res.ok && data.ok) {
+      setSuccess();
+      setTimeout(() => window.location.href = '/', 1800);
+    } else if (data.error) {
+      const isExpired = (data.error_description || '').toLowerCase().includes('expired') ||
+                        (data.error || '').includes('expired');
+      if (isExpired) setExpired(data.error_description);
+      else setError(data.error_description || data.error);
+    } else {
+      setError('Session could not be established. Please try again.');
+    }
+  } catch (e) {
+    setError('Network error. Please check your connection and try again.');
+  }
+})();
+</script>
+</body>
+</html>
