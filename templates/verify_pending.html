@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Verify Your Email — LeetCode Leaderboard</title>
+  <link rel="stylesheet" href="/static/css/main.css">
+</head>
+<body>
+
+<div class="verify-page" id="verify-pending-page">
+  <div class="verify-card">
+
+    {% if skip_verification %}
+    <!-- Bypass mode -->
+    <div style="font-size:2.5rem;margin-bottom:16px">🔓</div>
+    <h1 style="font-size:1.2rem;font-weight:700;margin-bottom:8px;color:var(--accent)">
+      Verification Bypassed
+    </h1>
+    <p style="color:var(--text-secondary);font-size:0.88rem;margin-bottom:20px;line-height:1.6">
+      Email verification is disabled in development mode. You can sign in directly.
+    </p>
+    <a href="/login" class="btn btn-primary w-full" style="justify-content:center">← Go to Sign In</a>
+
+    {% else %}
+
+    <div class="verify-icon-wrap">📧</div>
+
+    <h1 style="font-size:1.3rem;font-weight:700;margin-bottom:8px;">Check your inbox</h1>
+    <p style="color:var(--text-secondary);font-size:0.88rem;line-height:1.7;margin-bottom:6px;">
+      We sent a verification link to:
+    </p>
+    <p style="font-weight:600;color:var(--accent);font-size:0.95rem;margin-bottom:20px;word-break:break-all;">
+      {{ email }}
+    </p>
+
+    {% if error %}
+    <div class="alert alert-error" style="text-align:left;margin-bottom:16px">
+      <div>
+        <strong>⚠ Problem sending email</strong><br>
+        <span style="font-size:0.82rem">{{ error }}</span>
+      </div>
+    </div>
+    {% endif %}
+
+    {% if success %}
+    <div class="alert alert-success" data-auto-dismiss="6000" style="text-align:left;margin-bottom:16px">
+      ✓ {{ success }}
+    </div>
+    {% endif %}
+
+    <p style="color:var(--text-secondary);font-size:0.82rem;line-height:1.6;margin-bottom:20px;">
+      Click the link in the email to verify your account. This page checks automatically every few seconds.
+    </p>
+
+    <!-- Rate-limit tip -->
+    <div class="alert alert-warning" style="text-align:left;font-size:0.78rem;margin-bottom:20px">
+      <div>
+        <strong>💡 Link expired or no email?</strong><br>
+        Supabase limits verification emails to <strong>2–3 per hour</strong> on the free plan.
+        If you just registered, check your spam folder first. If the link says "expired",
+        wait a few minutes and use the Resend button below.
+      </div>
+    </div>
+
+    <div style="display:flex;align-items:center;gap:8px;justify-content:center;margin-bottom:24px;">
+      <span class="spinner"></span>
+      <span style="font-size:0.8rem;color:var(--text-muted)">Checking verification status…</span>
+    </div>
+
+    <hr class="divider">
+
+    <form action="/resend-verification" method="post" style="margin-bottom:10px">
+      <button type="submit" class="btn btn-secondary w-full">
+        ↺ Resend Verification Email
+      </button>
+    </form>
+
+    <!-- Try logging in directly (in case already verified via link) -->
+    <a href="/login" class="btn btn-ghost w-full" style="justify-content:center;font-size:0.82rem">
+      Already verified? → Try signing in
+    </a>
+
+    <a href="/login" style="display:block;text-align:center;margin-top:16px;font-size:0.78rem;color:var(--text-muted)">
+      ← Back to Sign In
+    </a>
+
+    {% endif %}
+  </div>
+</div>
+
+<script src="/static/js/app.js"></script>
+</body>
+</html>
