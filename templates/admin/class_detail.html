@@ -1,0 +1,203 @@
+{% extends "base.html" %}
+
+{% block title %}{{ cls.name }} — LeetCode Leaderboard{% endblock %}
+{% block page_title %}
+  <a href="/admin/classes" style="color:var(--text-muted);text-decoration:none;font-weight:400">Classes</a>
+  <span style="color:var(--border);margin:0 6px">/</span>
+  {{ cls.name }}
+{% endblock %}
+
+{% block topbar_actions %}
+  <button class="btn btn-secondary btn-sm" id="refresh-btn"
+          onclick="refreshStats('/admin/refresh-stats/{{ cls.id }}', this)">
+    ↺ Refresh All Stats
+  </button>
+  <form action="/admin/classes/{{ cls.id }}/delete" method="post">
+    <button type="submit" class="btn btn-danger btn-sm">✕ Delete</button>
+  </form>
+{% endblock %}
+
+{% block content %}
+
+<!-- Class Header -->
+<div style="display:grid;grid-template-columns:1.5fr 1fr 1fr;gap:20px;margin-bottom:24px;align-items:start">
+
+  <div class="card">
+    <div style="display:flex;align-items:center;gap:14px;margin-bottom:16px">
+      <div class="class-icon" style="width:48px;height:48px;font-size:1.3rem">⬡</div>
+      <div>
+        <h1 style="font-size:1.2rem;font-weight:700;line-height:1.3">{{ cls.name }}</h1>
+        {% if cls.description %}
+        <p style="font-size:0.82rem;color:var(--text-secondary);margin-top:3px">{{ cls.description }}</p>
+        {% endif %}
+      </div>
+    </div>
+    <div style="display:flex;gap:24px">
+      <div>
+        <div style="font-size:1.6rem;font-weight:700;font-family:var(--font-mono)">{{ leaderboard|length }}</div>
+        <div style="font-size:0.75rem;color:var(--text-secondary)">Students</div>
+      </div>
+      {% set total = namespace(v=0) %}
+      {% for s in leaderboard %}{% set total.v = total.v + (s.solved_total or 0) %}{% endfor %}
+      <div>
+        <div style="font-size:1.6rem;font-weight:700;font-family:var(--font-mono);color:var(--green)">{{ total.v }}</div>
+        <div style="font-size:0.75rem;color:var(--text-secondary)">Total Solved</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div style="font-size:0.78rem;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-secondary);margin-bottom:12px">
+      🔗 Invite Link
+    </div>
+    {% if invite_link %}
+    <p style="font-size:0.8rem;color:var(--text-muted);margin-bottom:10px">Share with students to let them join.</p>
+    <div class="invite-link-box">
+      <div class="invite-link-url">{{ invite_link }}</div>
+      <button class="btn btn-secondary btn-sm" data-copy="{{ invite_link }}">⎘ Copy</button>
+    </div>
+    <form action="/admin/classes/{{ cls.id }}/generate-invite" method="post" style="margin-top:8px">
+      <button type="submit" class="btn btn-ghost btn-sm"
+              onclick="return confirm('Regenerate? The old link stops working.')">↻ Regenerate</button>
+    </form>
+    {% else %}
+    <p style="font-size:0.82rem;color:var(--text-secondary);margin-bottom:12px">No invite link yet.</p>
+    <form action="/admin/classes/{{ cls.id }}/generate-invite" method="post">
+      <button type="submit" class="btn btn-primary btn-sm">Generate Invite Link</button>
+    </form>
+    {% endif %}
+  </div>
+
+  <div class="card">
+    <div style="font-size:0.78rem;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-secondary);margin-bottom:12px">
+      ➕ Add Manually
+    </div>
+    <p style="font-size:0.8rem;color:var(--text-muted);margin-bottom:10px">Add a LeetCode username directly.</p>
+    <form action="/admin/classes/{{ cls.id }}/add-student-manual" method="post" style="display:flex;gap:8px;align-items:center;">
+      <input type="text" name="leetcode_username" class="input" placeholder="LeetCode Username" required style="flex:1;">
+      <button type="submit" class="btn btn-primary">Add</button>
+    </form>
+  </div>
+</div>
+
+<!-- Leaderboard Table -->
+<div class="card" style="padding:0;overflow:hidden">
+  <div style="padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
+    <div style="display:flex;align-items:center;gap:16px">
+      <h2 style="font-size:0.95rem;font-weight:600">Leaderboard</h2>
+      <select id="sort-dropdown" class="form-control" style="width:auto;padding:4px 8px;font-size:0.8rem;background:var(--bg-overlay)">
+        <option value="points">Sort by: Points</option>
+        <option value="total">Sort by: Total Solved</option>
+        <option value="easy">Sort by: Easy</option>
+        <option value="med">Sort by: Medium</option>
+        <option value="hard">Sort by: Hard</option>
+        <option value="rank">Sort by: LC Rank</option>
+      </select>
+    </div>
+    <span style="font-size:0.78rem;color:var(--text-muted)">Ranked by Points initially</span>
+  </div>
+
+  {% if leaderboard %}
+  <div class="table-wrap" style="border:none;border-radius:0">
+    <table data-sortable>
+      <thead>
+        <tr>
+          <th style="width:48px">#</th>
+          <th>Student</th>
+          <th data-sort="lc">LC Username</th>
+          <th data-sort="easy" style="color:var(--easy)" title="Sort by Easy">Easy ↕</th>
+          <th data-sort="med" style="color:var(--medium)" title="Sort by Medium">Medium ↕</th>
+          <th data-sort="hard" style="color:var(--hard)" title="Sort by Hard">Hard ↕</th>
+          <th data-sort="total" title="Sort by Total">Total ↕</th>
+          <th data-sort="points" style="color:var(--purple)" title="Sort by Points">Points ↕</th>
+          <th data-sort="rank" title="Sort by LeetCode Rank">LC Rank ↕</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for s in leaderboard %}
+        <tr>
+          <td>
+            <span class="rank-badge rank-{{ s._rank if s._rank <= 3 else 'n' }}">{{ s._rank }}</span>
+          </td>
+          <td>
+            <div style="display:flex;align-items:center;gap:10px">
+              <div class="avatar-sm" data-avatar="{{ s.display_name or s.user_id }}"></div>
+              <div>
+                <div style="font-weight:500;font-size:0.88rem">{{ s.display_name or 'Student' }}</div>
+              </div>
+            </div>
+          </td>
+          <td data-val="{{ s.leetcode_username or '' }}">
+            {% if s.leetcode_username %}
+            <a href="https://leetcode.com/{{ s.leetcode_username }}" target="_blank"
+               style="font-family:var(--font-mono);font-size:0.82rem;color:var(--accent)">
+              {{ s.leetcode_username }}
+            </a>
+            {% else %}
+            <span style="color:var(--text-muted);font-size:0.8rem">Not set</span>
+            {% endif %}
+          </td>
+          <td data-val="{{ s.solved_easy or 0 }}"><span class="pill pill-easy">{{ s.solved_easy or 0 }}</span></td>
+          <td data-val="{{ s.solved_medium or 0 }}"><span class="pill pill-medium">{{ s.solved_medium or 0 }}</span></td>
+          <td data-val="{{ s.solved_hard or 0 }}"><span class="pill pill-hard">{{ s.solved_hard or 0 }}</span></td>
+          <td data-val="{{ s.solved_total or 0 }}">
+            <strong style="color:var(--text-primary);font-family:var(--font-mono)">{{ s.solved_total or 0 }}</strong>
+          </td>
+          <td data-val="{{ s.points or 0 }}">
+            <strong style="color:var(--purple);font-family:var(--font-mono);font-size:1.1em;">{{ s.points or 0 }}</strong>
+          </td>
+          <td data-val="{{ s.ranking or 0 }}">
+            <span style="font-family:var(--font-mono);font-size:0.82rem;color:var(--text-secondary)">
+              {{ '{:,}'.format(s.ranking) if s.ranking else '—' }}
+            </span>
+          </td>
+          <td>
+            <form action="/admin/classes/{{ cls.id }}/remove-student/{{ s.user_id }}" method="post">
+              <button type="submit" class="btn btn-ghost btn-sm" style="color:var(--red)">Remove</button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="empty-state">
+    <div class="empty-icon">◎</div>
+    <h3>No students yet</h3>
+    <p>Share the invite link so students can join.</p>
+  </div>
+  {% endif %}
+</div>
+
+<script>
+function refreshStats(url, btn) {
+  btn.disabled = true;
+  const orig = btn.innerHTML;
+  btn.innerHTML = '<span class="spinner"></span> Refreshing…';
+  fetch(url, { method: 'POST' })
+    .then(r => r.json())
+    .then(data => {
+      if (data.refreshed !== undefined) {
+        showToast(`Refreshed ${data.refreshed} student(s).`, 'success');
+        setTimeout(() => location.reload(), 1000);
+      } else showToast(data.error || 'Error.', 'error');
+    })
+    .catch(() => showToast('Network error.', 'error'))
+    .finally(() => { btn.innerHTML = orig; btn.disabled = false; });
+}
+</script>
+
+<script>
+document.getElementById('sort-dropdown').addEventListener('change', function(e) {
+  const col = e.target.value;
+  const th = document.querySelector(`th[data-sort="${col}"]`);
+  if (th) {
+    // For LC Rank, we want ascending (lowest number first). For everything else, descending (highest first)
+    th.dataset.sortDir = (col === 'rank') ? 'desc' : 'asc'; 
+    th.click();
+  }
+});
+</script>
+{% endblock %}

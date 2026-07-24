@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+
+{% block title %}Students — LeetCode Leaderboard{% endblock %}
+{% block page_title %}Students{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+  <div class="page-header-left">
+    <h1>All Students</h1>
+    <p>{{ students|length }} student{{ 's' if students|length != 1 }}</p>
+  </div>
+  <div style="display:flex;gap:8px">
+    <a href="/admin/students" class="btn {{ 'btn-primary' if filter == 'all' else 'btn-secondary' }} btn-sm">All</a>
+    <a href="/admin/students?filter=unassigned" class="btn {{ 'btn-primary' if filter == 'unassigned' else 'btn-secondary' }} btn-sm">Unassigned</a>
+  </div>
+</div>
+
+{% if students %}
+<div class="table-wrap">
+  <table data-sortable>
+    <thead>
+      <tr>
+        <th>Student</th>
+        <th data-sort="class">Class</th>
+        <th data-sort="lc">LC Username</th>
+        <th data-sort="total">Total</th>
+        <th data-sort="easy" style="color:var(--easy)">Easy</th>
+        <th data-sort="medium" style="color:var(--medium)">Medium</th>
+        <th data-sort="hard" style="color:var(--hard)">Hard</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for item in students %}
+      <tr>
+        <td>
+          <div style="display:flex;align-items:center;gap:10px">
+            <div class="avatar-sm" data-avatar="{{ item.student.display_name or item.student.user_id }}"></div>
+            <div style="font-weight:500;font-size:0.88rem">{{ item.student.display_name or 'Student' }}</div>
+          </div>
+        </td>
+        <td data-val="{{ item.class.name if item.class else '' }}">
+          {% if item.class %}
+          <a href="/admin/classes/{{ item.class.id }}" style="color:var(--accent);font-size:0.85rem">{{ item.class.name }}</a>
+          {% else %}
+          <span class="badge badge-pending">Unassigned</span>
+          {% endif %}
+        </td>
+        <td data-val="{{ item.student.leetcode_username or '' }}">
+          {% if item.student.leetcode_username %}
+          <a href="https://leetcode.com/{{ item.student.leetcode_username }}" target="_blank"
+             style="font-family:var(--font-mono);font-size:0.82rem;color:var(--accent)">
+            {{ item.student.leetcode_username }}
+          </a>
+          {% else %}
+          <span style="color:var(--text-muted);font-size:0.8rem">—</span>
+          {% endif %}
+        </td>
+        <td data-val="{{ item.student.solved_total or 0 }}">
+          <strong style="font-family:var(--font-mono);color:var(--accent)">{{ item.student.solved_total or 0 }}</strong>
+        </td>
+        <td data-val="{{ item.student.solved_easy or 0 }}"><span class="pill pill-easy">{{ item.student.solved_easy or 0 }}</span></td>
+        <td data-val="{{ item.student.solved_medium or 0 }}"><span class="pill pill-medium">{{ item.student.solved_medium or 0 }}</span></td>
+        <td data-val="{{ item.student.solved_hard or 0 }}"><span class="pill pill-hard">{{ item.student.solved_hard or 0 }}</span></td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<div class="empty-state">
+  <div class="empty-icon">◎</div>
+  <h3>No students found</h3>
+  <p>Students appear here after they register and verify their email.</p>
+</div>
+{% endif %}
+{% endblock %}
