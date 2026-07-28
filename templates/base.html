@@ -5,8 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{% block title %}LeetCode Leaderboard{% endblock %}</title>
   <meta name="description" content="{% block description %}Track and rank LeetCode progress across classes{% endblock %}">
-  <link rel="stylesheet" href="/static/css/main.css">
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏆</text></svg>">
+  <link rel="stylesheet" href="/static/css/main.css?v=2">
+  <link rel="icon" href="/static/logo.jpg">
+  <script>
+    if (localStorage.getItem('theme') === 'dark') {
+      document.documentElement.setAttribute('data-theme', 'dark');
+    }
+  </script>
   {% block extra_head %}{% endblock %}
 </head>
 <body>
@@ -17,34 +22,43 @@
   <!-- Sidebar -->
   <aside class="sidebar">
     <div class="sidebar-logo">
-      <div class="logo-icon">LC</div>
+      <img src="/static/logo.jpg" alt="Logo" style="width: 40px; height: 40px; border-radius: 4px; object-fit: contain;">
       <div class="logo-text">
         Leaderboard
-        <span>LeetCode Tracker</span>
+        <span>Educational Platform</span>
       </div>
     </div>
 
     <nav class="sidebar-nav">
-      {% if user and user.role == 'admin' %}
-        <span class="nav-section-label">Admin</span>
+      {% if user and user.role in ['admin', 'superadmin'] %}
+        <span class="nav-section-label">Admin Portal</span>
         <a href="/admin" class="nav-link {% if request.url.path == '/admin' %}active{% endif %}">
-          <span class="nav-icon">⊞</span> Dashboard
+          <span class="nav-icon">📊</span> Dashboard
         </a>
         <a href="/admin/classes" class="nav-link {% if '/admin/classes' in request.url.path %}active{% endif %}">
-          <span class="nav-icon">⬡</span> Classes
+          <span class="nav-icon">📚</span> Classes
         </a>
-        <a href="/admin/students" class="nav-link {% if '/admin/students' in request.url.path %}active{% endif %}">
-          <span class="nav-icon">◎</span> Students
+        <a href="/admin/staff" class="nav-link {% if '/admin/staff' in request.url.path %}active{% endif %}">
+          <span class="nav-icon">👤</span> Manage Staff
         </a>
       {% else %}
-        <span class="nav-section-label">My Space</span>
-        <a href="/student" class="nav-link {% if request.url.path == '/student' %}active{% endif %}">
-          <span class="nav-icon">⊞</span> Dashboard
+        <span class="nav-section-label">Public View</span>
+        <a href="/leaderboard" class="nav-link {% if request.url.path == '/leaderboard' %}active{% endif %}">
+          <span class="nav-icon">🏆</span> Leaderboards
         </a>
       {% endif %}
     </nav>
 
     <div class="sidebar-footer">
+      <div style="display:flex; justify-content:center; align-items:center; gap:8px; margin-bottom:12px;">
+        <span style="font-size:0.8rem; color:var(--text-secondary)">Light</span>
+        <label class="theme-switch" for="theme-toggle">
+          <input type="checkbox" id="theme-toggle">
+          <span class="slider round"></span>
+        </label>
+        <span style="font-size:0.8rem; color:var(--text-secondary)">Dark</span>
+      </div>
+
       {% if user %}
       <div class="user-chip">
         <div class="avatar avatar-sm" data-avatar="{{ user.full_name or user.email }}"></div>
@@ -53,11 +67,22 @@
           <div class="user-role">{{ user.role | capitalize }}</div>
         </div>
       </div>
-      <form action="/logout" method="post" style="margin-top:6px">
+      <form action="/logout" method="get" style="margin-top:6px" data-confirm="Are you sure you want to sign out?" data-confirm-ok="Sign Out" data-confirm-class="btn-danger">
         <button type="submit" class="btn btn-ghost btn-sm w-full" style="justify-content:flex-start">
-          <span>⎋</span> Sign Out
+          <span>🚪</span> Sign Out
         </button>
       </form>
+      {% else %}
+      <div class="user-chip" style="margin-bottom: 6px;">
+        <div class="avatar avatar-sm" style="background:var(--bg-overlay);">👤</div>
+        <div class="user-info">
+          <div class="user-name">Guest</div>
+          <div class="user-role">Student</div>
+        </div>
+      </div>
+      <a href="/login" class="btn btn-ghost btn-sm w-full" style="justify-content:flex-start; color: var(--text-secondary);">
+        <span>🔐</span> Staff Login
+      </a>
       {% endif %}
     </div>
   </aside>
@@ -75,9 +100,57 @@
   </div>
 
 </div>
+
+<!-- Global Confirm Modal -->
+<div class="modal-backdrop" id="modal-confirm">
+  <div class="modal" style="max-width: 400px; text-align: center; padding: 32px 24px;">
+    <div style="font-size: 2.5rem; margin-bottom: 12px; color: var(--text-secondary);" id="confirm-icon">⚠</div>
+    <h3 id="confirm-title" style="margin-bottom: 8px; font-size: 1.2rem;">Confirm Action</h3>
+    <p id="confirm-message" style="color:var(--text-secondary);font-size:0.9rem;margin-bottom:24px;">Are you sure?</p>
+    <div style="display:flex;gap:12px;justify-content:center;">
+      <button type="button" class="btn btn-secondary w-full" id="confirm-cancel" data-close-modal="modal-confirm">Cancel</button>
+      <button type="button" class="btn w-full" id="confirm-ok">Yes</button>
+    </div>
+  </div>
+</div>
+
+<!-- Points Info Modal -->
+<div class="modal-backdrop" id="modal-points-info">
+  <div class="modal" style="max-width: 420px; text-align: left; padding: 24px;">
+    <div class="modal-header" style="margin-bottom: 16px;">
+      <h3 class="modal-title" style="display:flex; align-items:center; gap:8px;">
+        <span style="font-size:1.2rem;">⚡</span> Points Calculation
+      </h3>
+      <button class="modal-close" data-close-modal="modal-points-info">✕</button>
+    </div>
+    
+    <p style="color:var(--text-secondary); font-size:0.88rem; margin-bottom: 16px;">
+      Points are automatically calculated based on the difficulty of LeetCode problems solved:
+    </p>
+
+    <div style="display:flex; flex-direction:column; gap:10px; margin-bottom:20px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 14px; background:var(--bg-overlay); border-radius:8px; border:1px solid var(--border);">
+        <span style="color:var(--easy); font-weight:600;">✓ Easy Problem</span>
+        <strong style="font-family:var(--font-mono); color:var(--text-primary);">+1 Point</strong>
+      </div>
+      <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 14px; background:var(--bg-overlay); border-radius:8px; border:1px solid var(--border);">
+        <span style="color:var(--medium); font-weight:600;">⚡ Medium Problem</span>
+        <strong style="font-family:var(--font-mono); color:var(--text-primary);">+3 Points</strong>
+      </div>
+      <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 14px; background:var(--bg-overlay); border-radius:8px; border:1px solid var(--border);">
+        <span style="color:var(--hard); font-weight:600;">🔥 Hard Problem</span>
+        <strong style="font-family:var(--font-mono); color:var(--text-primary);">+5 Points</strong>
+      </div>
+    </div>
+
+    <div style="background:rgba(255, 161, 22, 0.08); border:1px solid rgba(255, 161, 22, 0.2); padding:12px; border-radius:8px; font-size:0.82rem; color:var(--text-secondary); text-align:center;">
+      <strong style="color:var(--accent);">Total Formula:</strong> (Easy × 1) + (Medium × 3) + (Hard × 5)
+    </div>
+  </div>
+</div>
 {% endblock %}
 
-<script src="/static/js/app.js"></script>
+<script src="/static/js/app.js?v=2"></script>
 {% block extra_scripts %}{% endblock %}
 </body>
 </html>
