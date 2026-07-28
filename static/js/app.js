@@ -159,3 +159,69 @@ if (document.getElementById('verify-pending-page')) {
     if (++pollCount > 60) clearInterval(interval); // stop after 5 min
   }, 5000);
 }
+
+/* ── Custom UI Confirm ────────────────────────────────────── */
+function uiConfirm(message, title, okText, okClass, onConfirm) {
+  const m = document.getElementById('modal-confirm');
+  if (!m) return;
+  document.getElementById('confirm-title').textContent = title || 'Confirm Action';
+  document.getElementById('confirm-message').textContent = message || 'Are you sure?';
+  const okBtn = document.getElementById('confirm-ok');
+  okBtn.textContent = okText || 'Yes';
+  okBtn.className = 'btn w-full ' + (okClass || 'btn-primary');
+  
+  okBtn.onclick = () => {
+    closeModal('modal-confirm');
+    onConfirm();
+  };
+  openModal('modal-confirm');
+}
+
+/* Override forms with data-confirm */
+document.addEventListener('submit', e => {
+  if (e.target && e.target.hasAttribute('data-confirm')) {
+    e.preventDefault();
+    const msg = e.target.getAttribute('data-confirm');
+    const title = e.target.getAttribute('data-confirm-title') || 'Confirm';
+    const okText = e.target.getAttribute('data-confirm-ok') || 'Confirm';
+    const okClass = e.target.getAttribute('data-confirm-class') || 'btn-primary';
+    
+    uiConfirm(msg, title, okText, okClass, () => {
+      e.target.removeAttribute('data-confirm');
+      e.target.submit();
+      e.target.setAttribute('data-confirm', msg);
+    });
+  }
+});
+
+/* ── Toggle Password Visibility ───────────────────────────── */
+function togglePasswordVisibility(inputId, btn) {
+  const input = document.getElementById(inputId) || (btn ? btn.parentElement.querySelector('input') : null);
+  if (!input) return;
+  const isPassword = input.type === 'password';
+  input.type = isPassword ? 'text' : 'password';
+  if (btn) {
+    btn.textContent = isPassword ? '👁 Hide' : '👁 Show';
+  }
+}
+
+/* Theme Toggle */
+document.addEventListener('DOMContentLoaded', () => {
+  const toggle = document.getElementById('theme-toggle');
+  if (toggle) {
+    const currentTheme = localStorage.getItem('theme') || 'light';
+    if (currentTheme === 'dark') {
+      document.documentElement.setAttribute('data-theme', 'dark');
+      toggle.checked = true;
+    }
+    toggle.addEventListener('change', (e) => {
+      if (e.target.checked) {
+        document.documentElement.setAttribute('data-theme', 'dark');
+        localStorage.setItem('theme', 'dark');
+      } else {
+        document.documentElement.removeAttribute('data-theme');
+        localStorage.setItem('theme', 'light');
+      }
+    });
+  }
+});

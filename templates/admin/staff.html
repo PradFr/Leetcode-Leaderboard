@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+
+{% block title %}Manage Staff — LeetCode Leaderboard{% endblock %}
+{% block page_title %}Staff & Admins{% endblock %}
+
+{% block content %}
+<div class="content-wrapper">
+  
+  {% if request.query_params.get("error") %}
+  <div class="alert alert-error" style="margin-bottom: 24px;">
+    ⚠ {{ request.query_params.get("error") }}
+  </div>
+  {% endif %}
+  {% if request.query_params.get("success") %}
+  <div class="alert alert-success" style="margin-bottom: 24px;">
+    ✓ {{ request.query_params.get("success") }}
+  </div>
+  {% endif %}
+
+  <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 24px;">
+    <!-- Staff List -->
+    <div class="card" style="padding: 24px;">
+      <h3 style="margin-bottom: 16px;">Active Staff</h3>
+      <table class="table" style="width: 100%; border-collapse: collapse; text-align: left;">
+        <thead>
+          <tr style="border-bottom: 1px solid var(--border);">
+            <th style="padding: 8px 0; color: var(--text-secondary);">Name</th>
+            <th style="padding: 8px 0; color: var(--text-secondary);">Email</th>
+            <th style="padding: 8px 0; color: var(--text-secondary);">Role</th>
+            <th style="padding: 8px 0; color: var(--text-secondary); text-align: right;">Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for p in profiles %}
+          <tr style="border-bottom: 1px solid var(--border);">
+            <td style="padding: 12px 0;"><strong>{{ p.full_name or '-' }}</strong></td>
+            <td style="padding: 12px 0; color: var(--text-secondary);">{{ p.email }}</td>
+            <td style="padding: 12px 0;">
+              {% if p.role == 'superadmin' %}
+              <span style="background: rgba(255, 161, 22, 0.15); color: var(--accent); padding: 2px 8px; border-radius: 4px; font-size: 0.8rem; border: 1px solid rgba(255, 161, 22, 0.4); font-weight: 600;">
+                👑 Super Admin
+              </span>
+              {% else %}
+              <span style="background: var(--bg-surface); padding: 2px 8px; border-radius: 4px; font-size: 0.8rem; border: 1px solid var(--border);">
+                {{ p.role | capitalize }}
+              </span>
+              {% endif %}
+            </td>
+            <td style="padding: 12px 0; text-align: right;">
+              {% if p.role == 'superadmin' %}
+                <span style="font-size:0.78rem; color:var(--accent); font-weight:600;">Protected</span>
+              {% elif user and (p.id|string) != user.id %}
+                <form action="/admin/staff/delete/{{ p.id }}" method="post" style="display:inline;" data-confirm="Are you sure you want to remove admin access for {{ p.email }}?" data-confirm-ok="Remove" data-confirm-class="btn-danger">
+                  <button type="submit" class="btn btn-ghost btn-sm" style="color:var(--red);">Remove</button>
+                </form>
+              {% else %}
+                <span style="font-size:0.78rem; color:var(--text-muted);">(You)</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Add Staff Form -->
+    <div class="card" style="padding: 24px; align-self: start;">
+      <h3 style="margin-bottom: 8px;">Add New Admin</h3>
+      <p style="color:var(--text-secondary); font-size: 0.88rem; margin-bottom: 16px;">
+        Creates a new staff account with immediate admin access.
+      </p>
+      
+      <form action="/admin/staff/add" method="post" style="display: flex; flex-direction: column; gap: 12px;" data-confirm="Are you sure you want to add this admin?">
+        <div class="form-group">
+          <label class="form-label">Full Name</label>
+          <input class="form-control" type="text" name="full_name" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Email</label>
+          <input class="form-control" type="email" name="email" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Password</label>
+          <div style="position:relative;">
+            <input id="staff-password" class="form-control" type="password" name="password" minlength="6" required style="padding-right:65px;">
+            <button type="button" class="btn btn-ghost btn-sm" onclick="togglePasswordVisibility('staff-password', this)" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);font-size:0.75rem;padding:4px 8px;color:var(--text-secondary);">
+              👁 Show
+            </button>
+          </div>
+        </div>
+        <button class="btn btn-primary" type="submit" style="margin-top: 8px;">Add Admin</button>
+      </form>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

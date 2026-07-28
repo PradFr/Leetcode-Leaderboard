@@ -8,11 +8,12 @@
 {% endblock %}
 
 {% block topbar_actions %}
+  <button type="button" class="btn btn-secondary btn-sm" data-open-modal="modal-edit-class">✎ Edit Class</button>
   <button class="btn btn-secondary btn-sm" id="refresh-btn"
           onclick="refreshStats('/admin/refresh-stats/{{ cls.id }}', this)">
     ↺ Refresh All Stats
   </button>
-  <form action="/admin/classes/{{ cls.id }}/delete" method="post">
+  <form action="/admin/classes/{{ cls.id }}/delete" method="post" data-confirm="Are you absolutely sure you want to delete this class? This cannot be undone." data-confirm-ok="Delete" data-confirm-class="btn-danger">
     <button type="submit" class="btn btn-danger btn-sm">✕ Delete</button>
   </form>
 {% endblock %}
@@ -58,7 +59,7 @@
     </div>
     <form action="/admin/classes/{{ cls.id }}/generate-invite" method="post" style="margin-top:8px">
       <button type="submit" class="btn btn-ghost btn-sm"
-              onclick="return confirm('Regenerate? The old link stops working.')">↻ Regenerate</button>
+              onclick="event.preventDefault(); uiConfirm('Regenerate? The old link stops working.', 'Confirm', 'Regenerate', 'btn-primary', () => this.form.submit())">↻ Regenerate</button>
     </form>
     {% else %}
     <p style="font-size:0.82rem;color:var(--text-secondary);margin-bottom:12px">No invite link yet.</p>
@@ -73,10 +74,7 @@
       ➕ Add Manually
     </div>
     <p style="font-size:0.8rem;color:var(--text-muted);margin-bottom:10px">Add a LeetCode username directly.</p>
-    <form action="/admin/classes/{{ cls.id }}/add-student-manual" method="post" style="display:flex;gap:8px;align-items:center;">
-      <input type="text" name="leetcode_username" class="input" placeholder="LeetCode Username" required style="flex:1;">
-      <button type="submit" class="btn btn-primary">Add</button>
-    </form>
+    <button type="button" class="btn btn-primary w-full" data-open-modal="modal-add-student">Add Student Manually</button>
   </div>
 </div>
 
@@ -94,7 +92,17 @@
         <option value="rank">Sort by: LC Rank</option>
       </select>
     </div>
-    <span style="font-size:0.78rem;color:var(--text-muted)">Ranked by Points initially</span>
+    <div style="display:flex; align-items:center; gap: 16px;">
+      <span style="font-size:0.78rem;color:var(--text-muted)">Ranked by Points initially</span>
+      <div style="display:flex; align-items:center; gap:8px;">
+        <span style="font-size:0.8rem; color:var(--text-secondary)">Name</span>
+        <label class="theme-switch" for="display-toggle-admin">
+          <input type="checkbox" id="display-toggle-admin" onchange="document.body.classList.toggle('show-reg-nums', this.checked)">
+          <span class="slider round"></span>
+        </label>
+        <span style="font-size:0.8rem; color:var(--text-secondary)">Reg No.</span>
+      </div>
+    </div>
   </div>
 
   {% if leaderboard %}
@@ -109,7 +117,10 @@
           <th data-sort="med" style="color:var(--medium)" title="Sort by Medium">Medium ↕</th>
           <th data-sort="hard" style="color:var(--hard)" title="Sort by Hard">Hard ↕</th>
           <th data-sort="total" title="Sort by Total">Total ↕</th>
-          <th data-sort="points" style="color:var(--purple)" title="Sort by Points">Points ↕</th>
+          <th data-sort="points" style="color:var(--purple)" title="Sort by Points">
+            Points ↕
+            <button type="button" class="btn-info-icon" data-open-modal="modal-points-info" title="How points are calculated" onclick="event.stopPropagation()">ℹ</button>
+          </th>
           <th data-sort="rank" title="Sort by LeetCode Rank">LC Rank ↕</th>
           <th></th>
         </tr>
@@ -124,7 +135,10 @@
             <div style="display:flex;align-items:center;gap:10px">
               <div class="avatar-sm" data-avatar="{{ s.display_name or s.user_id }}"></div>
               <div>
-                <div style="font-weight:500;font-size:0.88rem">{{ s.display_name or 'Student' }}</div>
+                <div style="font-weight:500;font-size:0.88rem">
+                  <span class="display-name-text">{{ s.display_name or 'Student' }}</span>
+                  <span class="display-reg-text" style="display: none;">{{ s.register_number or 'N/A' }}</span>
+                </div>
               </div>
             </div>
           </td>
@@ -153,7 +167,7 @@
             </span>
           </td>
           <td>
-            <form action="/admin/classes/{{ cls.id }}/remove-student/{{ s.user_id }}" method="post">
+            <form action="/admin/classes/{{ cls.id }}/remove-student/{{ s.id }}" method="post" data-confirm="Are you sure you want to remove this student from the class?" data-confirm-ok="Remove" data-confirm-class="btn-danger">
               <button type="submit" class="btn btn-ghost btn-sm" style="color:var(--red)">Remove</button>
             </form>
           </td>
@@ -200,4 +214,106 @@ document.getElementById('sort-dropdown').addEventListener('change', function(e) 
   }
 });
 </script>
+
+<!-- Edit Class Modal -->
+<div class="modal-backdrop" id="modal-edit-class">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 class="modal-title">Edit Class</h3>
+      <button class="modal-close" data-close-modal="modal-edit-class">✕</button>
+    </div>
+    <form action="/admin/classes/{{ cls.id }}/edit" method="post">
+      <div class="form-group">
+        <label class="form-label" for="edit-class-name">Class Name *</label>
+        <input id="edit-class-name" class="form-control" type="text" name="name" value="{{ cls.name }}" required>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="edit-class-desc">Description</label>
+        <textarea id="edit-class-desc" class="form-control" name="description">{{ cls.description or '' }}</textarea>
+      </div>
+      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:4px;">
+        <button type="button" class="btn btn-secondary" data-close-modal="modal-edit-class">Cancel</button>
+        <button type="submit" class="btn btn-primary">Save Changes</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Add Student Modal -->
+<div class="modal-backdrop" id="modal-add-student">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 class="modal-title">Add Student Manually</h3>
+      <button class="modal-close" data-close-modal="modal-add-student">✕</button>
+    </div>
+    
+    <div id="add-student-msg" style="margin-bottom: 12px; display: none; padding: 10px; border-radius: 4px; font-size: 0.9rem;"></div>
+    
+    <form id="add-student-form" action="/admin/classes/{{ cls.id }}/add-student-manual" method="post">
+      <div class="form-group">
+        <label class="form-label" for="add-display-name">Student Name *</label>
+        <input id="add-display-name" class="form-control" type="text" name="display_name" placeholder="e.g. Student Name" required>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="add-register-number">Register Number *</label>
+        <input id="add-register-number" class="form-control" type="text" name="register_number" placeholder="e.g. REG123" required>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="add-leetcode-username">LeetCode Username *</label>
+        <input id="add-leetcode-username" class="form-control" type="text" name="leetcode_username" placeholder="e.g. student_123" required>
+      </div>
+      
+      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px;">
+        <button type="button" class="btn btn-secondary" data-close-modal="modal-add-student">Close</button>
+        <button type="submit" class="btn btn-primary" id="add-student-btn">Add Student</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+document.getElementById('add-student-form').addEventListener('submit', async function(e) {
+  e.preventDefault();
+  const form = e.target;
+  const btn = document.getElementById('add-student-btn');
+  const msgBox = document.getElementById('add-student-msg');
+  
+  btn.disabled = true;
+  btn.textContent = 'Adding...';
+  msgBox.style.display = 'none';
+  
+  try {
+    const res = await fetch(form.action, {
+      method: 'POST',
+      body: new FormData(form),
+      headers: { 'Accept': 'application/json' }
+    });
+    const data = await res.json();
+    
+    msgBox.style.display = 'block';
+    if (data.success) {
+      msgBox.style.background = 'var(--green-dim)';
+      msgBox.style.color = 'var(--green)';
+      msgBox.style.border = '1px solid var(--green)';
+      msgBox.textContent = '✅ ' + data.message;
+      form.reset();
+    } else {
+      msgBox.style.background = 'var(--red-dim)';
+      msgBox.style.color = 'var(--red)';
+      msgBox.style.border = '1px solid var(--red)';
+      msgBox.textContent = '❌ ' + (data.error || 'Failed to add student');
+    }
+  } catch (err) {
+    msgBox.style.display = 'block';
+    msgBox.style.background = 'var(--red-dim)';
+    msgBox.style.color = 'var(--red)';
+    msgBox.style.border = '1px solid var(--red)';
+    msgBox.textContent = '❌ Network error occurred';
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Add Student';
+  }
+});
+</script>
+
 {% endblock %}

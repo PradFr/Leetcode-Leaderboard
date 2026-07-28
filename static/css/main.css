@@ -1,48 +1,48 @@
 /* ============================================================
-   LeetCode Leaderboard — Design System
-   Professional dark theme: GitHub-dark × LeetCode aesthetic
+   Educational Institute Leaderboard — Design System
+   Professional Theme (Green/White and Green/Black)
    ============================================================ */
 
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
 
-/* ── Tokens ─────────────────────────────────────────────── */
+/* ─── Tokens (Light Theme Default) ───────────────────────────────────────── */
 :root {
   /* Backgrounds */
-  --bg-canvas:   #0d1117;
-  --bg-surface:  #161b22;
-  --bg-card:     #1c2128;
-  --bg-overlay:  #21262d;
-  --bg-input:    #0d1117;
+  --bg-canvas:   #f4f7f6;
+  --bg-surface:  #ffffff;
+  --bg-card:     #ffffff;
+  --bg-overlay:  #f0f4f2;
+  --bg-input:    #ffffff;
 
   /* Borders */
-  --border:      #30363d;
-  --border-muted:#21262d;
+  --border:      #d1dcd7;
+  --border-muted:#e6edea;
 
   /* Brand */
-  --accent:      #ffa116;
-  --accent-dim:  rgba(255, 161, 22, 0.15);
-  --accent-glow: rgba(255, 161, 22, 0.3);
-  --accent-dark: #cc8010;
+  --accent:      #1a7346;
+  --accent-dim:  rgba(26, 115, 70, 0.15);
+  --accent-glow: rgba(26, 115, 70, 0.3);
+  --accent-dark: #125734;
 
   /* Text */
-  --text-primary:   #e6edf3;
-  --text-secondary: #8b949e;
-  --text-muted:     #484f58;
-  --text-inverse:   #0d1117;
+  --text-primary:   #1f2924;
+  --text-secondary: #5a6660;
+  --text-muted:     #8fa199;
+  --text-inverse:   #ffffff;
 
   /* Status */
-  --green:   #3fb950;
-  --green-dim: rgba(63, 185, 80, 0.12);
-  --red:     #f85149;
-  --red-dim: rgba(248, 81, 73, 0.12);
-  --blue:    #58a6ff;
-  --blue-dim:rgba(88, 166, 255, 0.12);
-  --purple:  #a371f7;
+  --green:   #1a7346;
+  --green-dim: rgba(26, 115, 70, 0.12);
+  --red:     #d32f2f;
+  --red-dim: rgba(211, 47, 47, 0.12);
+  --blue:    #1976d2;
+  --blue-dim:rgba(25, 118, 210, 0.12);
+  --purple:  #7b1fa2;
 
   /* Difficulty */
-  --easy:   #00b8a3;
-  --medium: #ffc01e;
-  --hard:   #ef4743;
+  --easy:   #1a7346;
+  --medium: #f57c00;
+  --hard:   #d32f2f;
 
   /* Typography */
   --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
@@ -1110,3 +1110,125 @@ tbody tr.highlight-row:hover { background: rgba(255,161,22,0.12); }
 .font-700    { font-weight: 700; }
 .w-full      { width: 100%; }
 .truncate    { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* ── Info Icon Button ─────────────────────────────────────── */
+.btn-info-icon {
+  background: var(--bg-overlay);
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  border-radius: 50%;
+  width: 18px;
+  height: 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.72rem;
+  font-family: var(--font-sans);
+  cursor: pointer;
+  margin-left: 5px;
+  transition: all 0.2s ease;
+  vertical-align: middle;
+  line-height: 1;
+}
+.btn-info-icon:hover {
+  background: var(--accent);
+  color: #000;
+  border-color: var(--accent);
+}
+/* Theme Switch Toggle */
+.theme-switch {
+  position: relative;
+  display: inline-block;
+  width: 40px;
+  height: 20px;
+}
+.theme-switch input { 
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: var(--border);
+  transition: .4s;
+}
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 14px;
+  width: 14px;
+  left: 3px;
+  bottom: 3px;
+  background-color: var(--text-inverse);
+  transition: .4s;
+}
+input:checked + .slider {
+  background-color: var(--accent);
+}
+input:checked + .slider:before {
+  transform: translateX(20px);
+}
+.slider.round {
+  border-radius: 20px;
+}
+.slider.round:before {
+  border-radius: 50%;
+}
+/* Dark Theme */
+html[data-theme="dark"] {
+  /* Backgrounds */
+  --bg-canvas:   #0d1410;
+  --bg-surface:  #141c18;
+  --bg-card:     #1a241e;
+  --bg-overlay:  #1f2b24;
+  --bg-input:    #0d1410;
+
+  /* Borders */
+  --border:      #2b3831;
+  --border-muted:#1f2923;
+
+  /* Brand */
+  --accent:      #2db471;
+  --accent-dim:  rgba(45, 180, 113, 0.15);
+  --accent-glow: rgba(45, 180, 113, 0.3);
+  --accent-dark: #1f945a;
+
+  /* Text */
+  --text-primary:   #e0ece6;
+  --text-secondary: #90a39a;
+  --text-muted:     #5e6b64;
+  --text-inverse:   #0d1410;
+
+  /* Status */
+  --green:   #2db471;
+  --green-dim: rgba(45, 180, 113, 0.12);
+  --red:     #f85149;
+  --red-dim: rgba(248, 81, 73, 0.12);
+  --blue:    #58a6ff;
+  --blue-dim:rgba(88, 166, 255, 0.12);
+  --purple:  #a371f7;
+
+  /* Difficulty */
+  --easy:   #2db471;
+  --medium: #ffb74d;
+  --hard:   #ef5350;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.4);
+  --shadow-md: 0 4px 16px rgba(0,0,0,0.5);
+  --shadow-lg: 0 8px 32px rgba(0,0,0,0.6);
+}
+
+/* Display Toggle Logic */
+body.show-reg-nums .display-name-text {
+  display: none !important;
+}
+body.show-reg-nums .display-reg-text {
+  display: inline !important;
+}
+

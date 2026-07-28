@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+
+{% block title %}Leaderboards{% endblock %}
+
+{% block content %}
+<div style="max-width: 800px; margin: 40px auto; padding: 20px;">
+  <h2 style="margin-bottom: 30px; font-weight: 600;">Explore Classes</h2>
+
+  {% for group in grouped %}
+    <div style="margin-bottom: 40px;">
+      <h3 style="font-size: 1.25rem; font-weight: 500; border-bottom: 2px solid var(--border); padding-bottom: 10px; margin-bottom: 20px;">
+        {{ group.cat.name }}
+      </h3>
+      {% if group.classes %}
+        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px;">
+          {% for cls in group.classes %}
+            <a href="/leaderboard/{{ cls.id }}" style="text-decoration: none; color: inherit;">
+              <div class="card" style="transition: transform 0.2s, box-shadow 0.2s;">
+                <h4 style="margin: 0 0 10px 0; color: var(--primary);">{{ cls.name }}</h4>
+                <p style="color: var(--text-secondary); margin: 0; font-size: 0.9rem;">
+                  {{ cls.description or "No description provided." }}
+                </p>
+              </div>
+            </a>
+          {% endfor %}
+        </div>
+      {% else %}
+        <p style="color: var(--text-secondary); font-style: italic;">No classes in this category yet.</p>
+      {% endif %}
+    </div>
+  {% endfor %}
+
+  {% if ungrouped %}
+    <div style="margin-bottom: 40px;">
+      <h3 style="font-size: 1.25rem; font-weight: 500; border-bottom: 2px solid var(--border); padding-bottom: 10px; margin-bottom: 20px;">
+        Other Classes
+      </h3>
+      <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px;">
+        {% for cls in ungrouped %}
+          <a href="/leaderboard/{{ cls.id }}" style="text-decoration: none; color: inherit;">
+            <div class="card" style="transition: transform 0.2s, box-shadow 0.2s;">
+              <h4 style="margin: 0 0 10px 0; color: var(--primary);">{{ cls.name }}</h4>
+              <p style="color: var(--text-secondary); margin: 0; font-size: 0.9rem;">
+                {{ cls.description or "No description provided." }}
+              </p>
+            </div>
+          </a>
+        {% endfor %}
+      </div>
+    </div>
+  {% endif %}
+  
+  {% if not grouped and not ungrouped %}
+    <div class="card text-center" style="padding: 40px;">
+      <p style="color: var(--text-secondary); font-size: 1.1rem; margin: 0;">No classes available.</p>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}
