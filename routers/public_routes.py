@@ -1,3 +1,4 @@
+from pathlib import Path
 from typing import Optional
 from fastapi import APIRouter, Request, Form, Depends
 from fastapi.responses import RedirectResponse, HTMLResponse
@@ -7,7 +8,8 @@ from database import get_db, Class, Invite, Student, Category
 from utils import fetch_leetcode_stats
 
 router = APIRouter()
-templates = Jinja2Templates(directory="templates")
+BASE_DIR = Path(__file__).resolve().parent.parent
+templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
 
 
 @router.get("/leaderboard", response_class=HTMLResponse)
