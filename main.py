@@ -27,6 +27,9 @@ if static_dir.exists():
 # Run schema migrations on startup (optional if deploying to Vercel/serverless)
 @app.on_event("startup")
 def on_startup():
+    if os.getenv("VERCEL"):
+        print("Running on Vercel: skipping startup database migration.")
+        return
     try:
         database.ensure_tables()
     except Exception as e:
