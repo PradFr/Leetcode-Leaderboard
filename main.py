@@ -16,11 +16,13 @@ SECRET_KEY = os.getenv("SUPABASE_JWT_SECRET", "changeme-secret-key")
 app = FastAPI(title="LeetCode Leaderboard", docs_url=None, redoc_url=None)
 app.add_middleware(SessionMiddleware, secret_key=SECRET_KEY, max_age=86400 * 7)
 
+from pathlib import Path
+
 # Make sure Vercel or local app can find static files correctly
-if os.path.exists("static"):
-    app.mount("/static", StaticFiles(directory="static"), name="static")
-elif os.path.exists("../static"):
-    app.mount("/static", StaticFiles(directory="../static"), name="static")
+BASE_DIR = Path(__file__).resolve().parent
+static_dir = BASE_DIR / "static"
+if static_dir.exists():
+    app.mount("/static", StaticFiles(directory=str(static_dir)), name="static")
 
 # Run schema migrations on startup (optional if deploying to Vercel/serverless)
 @app.on_event("startup")
