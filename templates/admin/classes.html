@@ -30,13 +30,18 @@
       </div>
     </div>
 
+    {% if item.cls.category %}
+    <div style="font-size:0.75rem; color:var(--text-secondary); margin-bottom: 5px;">
+      Category: {{ item.cls.category.name }}
+    </div>
+    {% endif %}
     {% if item.cls.description %}
     <div class="class-desc">{{ item.cls.description }}</div>
     {% endif %}
 
     <div class="class-meta">
       <div class="class-meta-item">
-        <span>◎</span>
+        <span>👥</span>
         <span>{{ item.student_count }} student{{ 's' if item.student_count != 1 }}</span>
       </div>
       {% if item.top_user %}
@@ -53,7 +58,7 @@
     </div>
     {% else %}
     <div style="display:flex;align-items:center;gap:6px;font-size:0.75rem;color:var(--text-muted)">
-      <span>○</span> No invite link yet
+      <span>🚫</span> No invite link yet
     </div>
     {% endif %}
   </a>
@@ -62,7 +67,7 @@
 
 {% else %}
 <div class="empty-state">
-  <div class="empty-icon">⬡</div>
+  <div class="empty-icon">📂</div>
   <h3>No classes yet</h3>
   <p>Create your first class and share the invite link with students.</p>
   <a href="#" class="btn btn-primary" data-open-modal="modal-create-class">+ Create First Class</a>
@@ -76,20 +81,67 @@
       <h3 class="modal-title">Create New Class</h3>
       <button class="modal-close" data-close-modal="modal-create-class">✕</button>
     </div>
-    <form action="/admin/classes" method="post">
+    {% if not categories %}
+      <div class="alert alert-warning" style="margin-bottom: 15px;">
+        You must create a Category before creating a Class.
+      </div>
+      <form action="/admin/categories" method="post">
+        <div class="form-group">
+          <label class="form-label">Category Name</label>
+          <input class="form-control" type="text" name="name" required placeholder="e.g. Faculty of Engineering">
+        </div>
+        <button type="submit" class="btn btn-primary">Create Category</button>
+      </form>
+      <button type="button" class="btn btn-secondary" style="margin-top: 10px; width: 100%;" data-close-modal="modal-create-class">Cancel</button>
+    {% else %}
+    <form action="/admin/classes" method="post" onsubmit="return confirm('Are you sure you want to create this new class?');">
+      <div class="form-group">
+        <label class="form-label" for="new-class-cat">Category *</label>
+        <select id="new-class-cat" class="form-control" name="category_id" required>
+          <option value="" disabled selected>Select a Category...</option>
+          {% for cat in categories %}
+            <option value="{{ cat.id }}">{{ cat.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
       <div class="form-group">
         <label class="form-label" for="new-class-name">Class Name *</label>
         <input id="new-class-name" class="form-control" type="text" name="name"
-               placeholder="e.g. CS101 — Spring 2025" required autofocus>
+               placeholder="e.g. CS101 – Spring 2025" required autofocus>
       </div>
       <div class="form-group">
         <label class="form-label" for="new-class-desc">Description</label>
         <textarea id="new-class-desc" class="form-control" name="description"
-                  placeholder="Optional description of this class…"></textarea>
+                  placeholder="Optional description of this class..."></textarea>
       </div>
       <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:4px;">
         <button type="button" class="btn btn-secondary" data-close-modal="modal-create-class">Cancel</button>
         <button type="submit" class="btn btn-primary">Create Class</button>
+      </div>
+    </form>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Create Category Button and Modal -->
+<div style="margin-top: 20px;">
+  <button class="btn btn-secondary btn-sm" data-open-modal="modal-create-category">+ New Category</button>
+</div>
+
+<div class="modal-backdrop" id="modal-create-category">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 class="modal-title">Create New Category</h3>
+      <button class="modal-close" data-close-modal="modal-create-category">✕</button>
+    </div>
+    <form action="/admin/categories" method="post">
+      <div class="form-group">
+        <label class="form-label">Category Name *</label>
+        <input class="form-control" type="text" name="name" required placeholder="e.g. Faculty of Engineering">
+      </div>
+      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:4px;">
+        <button type="button" class="btn btn-secondary" data-close-modal="modal-create-category">Cancel</button>
+        <button type="submit" class="btn btn-primary">Create</button>
       </div>
     </form>
   </div>

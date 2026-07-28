@@ -3,20 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Sign In — LeetCode Leaderboard</title>
-  <meta name="description" content="Sign in to your LeetCode Leaderboard account">
+  <title>Admin Sign In — LeetCode Leaderboard</title>
+  <meta name="description" content="Sign in to your LeetCode Leaderboard admin account">
   <link rel="stylesheet" href="/static/css/main.css">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏆</text></svg>">
   <style>
-    .auth-form-panel { display: none; }
-    .auth-form-panel.active { display: flex; flex-direction: column; gap: 0; }
-    .divider-text {
-      display: flex; align-items: center; gap: 10px;
-      color: var(--text-muted); font-size: 0.78rem; margin: 16px 0;
-    }
-    .divider-text::before, .divider-text::after {
-      content: ''; flex: 1; height: 1px; background: var(--border);
-    }
     .lc-stat { display: flex; flex-direction: column; align-items: center; gap: 2px; }
     .lc-stat-val { font-size: 1.4rem; font-weight: 700; color: var(--text-primary); font-family: var(--font-mono); }
     .lc-stat-lbl { font-size: 0.7rem; color: var(--text-muted); }
@@ -36,49 +27,21 @@
       </div>
     </div>
 
-    <h2>Track Progress.<br>Compete Smarter.</h2>
-    <p>A unified leaderboard for your class. Watch rankings update live as everyone solves problems on LeetCode.</p>
+    <h2>Admin Portal.</h2>
+    <p>Manage classes, invite students to public leaderboards, and monitor stats across your institution.</p>
 
     <div class="auth-features">
-      <div class="auth-feature">
-        <div class="check">✓</div>
-        Live LeetCode stats — synced automatically
-      </div>
-      <div class="auth-feature">
-        <div class="check">✓</div>
-        Class-based leaderboards with rankings
-      </div>
-      <div class="auth-feature">
-        <div class="check">✓</div>
-        Easy/Medium/Hard breakdown per student
-      </div>
-      <div class="auth-feature">
-        <div class="check">✓</div>
-        Admin controls — create classes, share invite links
-      </div>
-    </div>
-
-    <div class="hero-stats">
-      <div class="lc-stat">
-        <div class="lc-stat-val" style="color:var(--easy)">Easy</div>
-        <div class="lc-stat-lbl">✓ Beginner</div>
-      </div>
-      <div class="lc-stat">
-        <div class="lc-stat-val" style="color:var(--medium)">Med</div>
-        <div class="lc-stat-lbl">⚡ Intermediate</div>
-      </div>
-      <div class="lc-stat">
-        <div class="lc-stat-val" style="color:var(--hard)">Hard</div>
-        <div class="lc-stat-lbl">🔥 Advanced</div>
-      </div>
+      <div class="auth-feature"><div class="check">✓</div> Create classes and cohorts</div>
+      <div class="auth-feature"><div class="check">✓</div> Generate invite links for public leaderboards</div>
+      <div class="auth-feature"><div class="check">✓</div> Manage staff and admin accounts</div>
     </div>
   </div>
 
   <!-- Auth Panel -->
   <div class="auth-panel">
     <div class="auth-box">
-      <h1 style="font-size:1.5rem;font-weight:700;margin-bottom:6px;">Welcome back</h1>
-      <p style="color:var(--text-secondary);font-size:0.88rem;margin-bottom:24px;">Sign in to your account or create a new one.</p>
+      <h1 style="font-size:1.5rem;font-weight:700;margin-bottom:6px;">Staff Sign In</h1>
+      <p style="color:var(--text-secondary);font-size:0.88rem;margin-bottom:24px;">Sign in to your admin account.</p>
 
       {% if error %}
       <div class="alert alert-error" data-auto-dismiss="5000">
@@ -91,63 +54,26 @@
       </div>
       {% endif %}
 
-      <!-- Tabs -->
-      <div class="auth-tabs">
-        <button class="auth-tab active" id="tab-login" onclick="switchTab('login')">Sign In</button>
-        <button class="auth-tab" id="tab-register" onclick="switchTab('register')">Register</button>
-      </div>
-
       <!-- Login Form -->
-      <div class="auth-form-panel active" id="panel-login">
+      <div class="auth-form-panel" style="display: flex; flex-direction: column;">
         <form action="/login" method="post" class="auth-form">
           <div class="form-group">
             <label class="form-label" for="login-email">Email address</label>
-            <input id="login-email" class="form-control" type="email" name="email" placeholder="you@example.com" required autocomplete="email">
+            <input id="login-email" class="form-control" type="email" name="email" placeholder="admin@example.com" required autocomplete="email">
           </div>
           <div class="form-group">
             <label class="form-label" for="login-password">Password</label>
-            <input id="login-password" class="form-control" type="password" name="password" placeholder="••••••••" required autocomplete="current-password" minlength="6">
+            <div style="position:relative;">
+              <input id="login-password" class="form-control" type="password" name="password" placeholder="••••••••" required autocomplete="current-password" minlength="6" style="padding-right:65px;">
+              <button type="button" class="btn btn-ghost btn-sm" onclick="togglePasswordVisibility('login-password', this)" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);font-size:0.75rem;padding:4px 8px;color:var(--text-secondary);">
+                👁 Show
+              </button>
+            </div>
           </div>
           <button type="submit" class="btn btn-primary w-full" style="margin-top:6px;padding:10px">
             Sign In →
           </button>
         </form>
-
-        <div class="divider-text">or</div>
-        <p style="text-align:center;font-size:0.82rem;color:var(--text-secondary)">
-          Don't have an account?
-          <a href="#" onclick="switchTab('register')" style="color:var(--accent)">Create one</a>
-        </p>
-      </div>
-
-      <!-- Register Form -->
-      <div class="auth-form-panel" id="panel-register">
-        <form action="/register" method="post" class="auth-form">
-          <div class="form-group">
-            <label class="form-label" for="reg-name">Full name</label>
-            <input id="reg-name" class="form-control" type="text" name="full_name" placeholder="Jane Doe" required autocomplete="name">
-          </div>
-          <div class="form-group">
-            <label class="form-label" for="reg-email">Email address</label>
-            <input id="reg-email" class="form-control" type="email" name="email" placeholder="you@example.com" required autocomplete="email">
-          </div>
-          <div class="form-group">
-            <label class="form-label" for="reg-password">Password <span style="color:var(--text-muted);font-size:0.75rem">(min. 6 characters)</span></label>
-            <input id="reg-password" class="form-control" type="password" name="password" placeholder="••••••••" required autocomplete="new-password" minlength="6">
-          </div>
-          <div class="alert alert-info" style="font-size:0.78rem;margin-bottom:12px">
-            📧 You'll receive a verification email — click the link to activate your account.
-          </div>
-          <button type="submit" class="btn btn-primary w-full" style="padding:10px">
-            Create Account →
-          </button>
-        </form>
-
-        <div class="divider-text">or</div>
-        <p style="text-align:center;font-size:0.82rem;color:var(--text-secondary)">
-          Already have an account?
-          <a href="#" onclick="switchTab('login')" style="color:var(--accent)">Sign in</a>
-        </p>
       </div>
 
     </div>
@@ -155,17 +81,5 @@
 </div>
 
 <script src="/static/js/app.js"></script>
-<script>
-  function switchTab(tab) {
-    document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
-    document.querySelectorAll('.auth-form-panel').forEach(p => p.classList.remove('active'));
-    document.getElementById('tab-' + tab).classList.add('active');
-    document.getElementById('panel-' + tab).classList.add('active');
-  }
-
-  // If URL has ?tab=register, switch automatically
-  const urlTab = new URLSearchParams(location.search).get('tab');
-  if (urlTab) switchTab(urlTab);
-</script>
 </body>
 </html>

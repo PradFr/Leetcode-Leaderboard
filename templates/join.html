@@ -1,65 +1,43 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Join Class — LeetCode Leaderboard</title>
-  <link rel="stylesheet" href="/static/css/main.css">
-</head>
-<body>
-<div class="verify-page">
-  <div class="verify-card" style="max-width:500px">
+{% extends "base.html" %}
 
-    {% if error %}
-      <div style="font-size:2.5rem;margin-bottom:16px">❌</div>
-      <h1 style="font-size:1.2rem;font-weight:700;margin-bottom:8px;color:var(--red)">Invalid Invite Link</h1>
-      <p style="color:var(--text-secondary);font-size:0.88rem;margin-bottom:24px">{{ error }}</p>
-      <a href="/student" class="btn btn-secondary w-full" style="justify-content:center">← Go to Dashboard</a>
+{% block title %}Join {{ cls.name if cls else 'Class' }} — LeetCode Leaderboard{% endblock %}
 
-    {% elif already_member %}
-      <div style="font-size:2.5rem;margin-bottom:16px">ℹ️</div>
-      <h1 style="font-size:1.2rem;font-weight:700;margin-bottom:8px">Already Enrolled</h1>
-      <p style="color:var(--text-secondary);font-size:0.88rem;margin-bottom:6px">
-        You're already a member of:
-      </p>
-      <p style="font-weight:700;color:var(--accent);font-size:1rem;margin-bottom:24px">
-        {{ current_class.name if current_class else 'a class' }}
-      </p>
-      <div class="alert alert-warning" style="text-align:left;font-size:0.82rem">
-        Students can only be enrolled in one class at a time. Contact your admin if you need to switch.
-      </div>
-      <a href="/student" class="btn btn-primary w-full" style="justify-content:center;margin-top:16px">Go to My Dashboard →</a>
+{% block content %}
+<div style="max-width:400px; margin:60px auto; padding:20px;">
+  {% if error %}
+    <div class="alert alert-error" style="margin-bottom:20px;">
+      ⚠ {{ error }}
+    </div>
+    <div style="text-align:center;">
+      <a href="/login" class="btn btn-ghost">Admin Login Portal</a>
+    </div>
+  {% else %}
+    <div style="text-align:center; margin-bottom: 24px;">
+      <h1 style="font-size:1.8rem; margin-bottom:8px;">Join {{ cls.name }}</h1>
+      <p style="color:var(--text-secondary);">Enter your details to join the leaderboard.</p>
+    </div>
 
-    {% else %}
-      <div style="font-size:2.5rem;margin-bottom:16px">🎓</div>
-      <h1 style="font-size:1.2rem;font-weight:700;margin-bottom:8px">You've been invited!</h1>
-      <p style="color:var(--text-secondary);font-size:0.88rem;margin-bottom:6px">You're joining:</p>
-      <div class="card" style="margin:12px 0 20px;text-align:left;padding:16px">
-        <div style="display:flex;align-items:center;gap:12px">
-          <div class="class-icon">⬡</div>
-          <div>
-            <div style="font-weight:700;font-size:1rem">{{ cls.name }}</div>
-            {% if cls.description %}
-            <div style="font-size:0.8rem;color:var(--text-secondary);margin-top:2px">{{ cls.description }}</div>
-            {% endif %}
-          </div>
-        </div>
+    <form action="/join/{{ token }}" method="post" class="card" style="padding: 24px; display: flex; flex-direction: column; gap: 16px;">
+      <div class="form-group">
+        <label class="form-label">Student Name</label>
+        <input class="form-control" type="text" name="display_name" placeholder="e.g. Student Name" required>
       </div>
-      <div class="alert alert-info" style="text-align:left;font-size:0.8rem;margin-bottom:20px">
-        ⚠️ You can only join <strong>one class</strong>. Once you confirm, you can't switch without admin help.
-      </div>
-      <div style="display:flex;gap:8px">
-        <a href="/student" class="btn btn-secondary" style="flex:1;justify-content:center">Cancel</a>
-        <form action="/join/{{ token }}" method="post" style="flex:1">
-          <button type="submit" class="btn btn-primary w-full" style="justify-content:center">
-            Join Class →
-          </button>
-        </form>
-      </div>
-    {% endif %}
 
-  </div>
+      <div class="form-group">
+        <label class="form-label">Register Number</label>
+        <input class="form-control" type="text" name="register_number" placeholder="e.g. REG123" required>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">LeetCode Username</label>
+        <input class="form-control" type="text" name="leetcode_username" placeholder="e.g. student_123" required>
+        <small style="color:var(--text-muted); font-size:0.8rem;">Must match exactly.</small>
+      </div>
+
+      <button type="submit" class="btn btn-primary w-full" style="padding:10px; margin-top:8px;">
+        Join Leaderboard →
+      </button>
+    </form>
+  {% endif %}
 </div>
-<script src="/static/js/app.js"></script>
-</body>
-</html>
+{% endblock %}

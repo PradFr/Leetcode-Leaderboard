@@ -12,31 +12,24 @@
 <!-- Stats Row -->
 <div class="stats-grid">
   <div class="stat-card">
-    <div class="stat-icon orange">⬡</div>
+    <div class="stat-icon orange">📦</div>
     <div>
       <div class="stat-value">{{ total_classes }}</div>
       <div class="stat-label">Total Classes</div>
     </div>
   </div>
   <div class="stat-card">
-    <div class="stat-icon blue">◎</div>
+    <div class="stat-icon blue">👥</div>
     <div>
       <div class="stat-value">{{ total_students }}</div>
       <div class="stat-label">Students</div>
     </div>
   </div>
   <div class="stat-card">
-    <div class="stat-icon green">✓</div>
+    <div class="stat-icon purple">👤</div>
     <div>
-      <div class="stat-value">{{ total_solved }}</div>
-      <div class="stat-label">Problems Solved</div>
-    </div>
-  </div>
-  <div class="stat-card">
-    <div class="stat-icon purple">◌</div>
-    <div>
-      <div class="stat-value">{{ unassigned_students }}</div>
-      <div class="stat-label">Unassigned Students</div>
+      <div class="stat-value">{{ total_admins }}</div>
+      <div class="stat-label">Staff / Admins</div>
     </div>
   </div>
 </div>
@@ -54,7 +47,7 @@
     <div style="display:flex;flex-direction:column;gap:10px;">
       {% for item in recent_classes %}
       <a href="/admin/classes/{{ item.cls.id }}" style="display:flex;align-items:center;gap:12px;padding:10px;border-radius:var(--r-sm);border:1px solid var(--border-muted);text-decoration:none;color:inherit;transition:border-color var(--t-fast),background var(--t-fast);" onmouseover="this.style.borderColor='var(--border)';this.style.background='var(--bg-overlay)'" onmouseout="this.style.borderColor='var(--border-muted)';this.style.background=''">
-        <div class="class-icon" style="width:34px;height:34px;font-size:0.9rem;">⬡</div>
+        <div class="class-icon" style="width:34px;height:34px;font-size:0.9rem;">📦</div>
         <div style="flex:1;min-width:0">
           <div style="font-size:0.88rem;font-weight:600;color:var(--text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ item.cls.name }}</div>
           <div style="font-size:0.76rem;color:var(--text-muted)">{{ item.student_count }} student{{ 's' if item.student_count != 1 }}</div>
@@ -65,10 +58,10 @@
     </div>
     {% else %}
     <div class="empty-state" style="padding:30px 0">
-      <div class="empty-icon">⬡</div>
+      <div class="empty-icon">📂</div>
       <h3>No classes yet</h3>
       <p>Create your first class to get started.</p>
-      <a href="#" class="btn btn-primary btn-sm" data-open-modal="modal-create-class">+ Create Class</a>
+      <a href="/admin/classes" class="btn btn-primary btn-sm">+ Create Class</a>
     </div>
     {% endif %}
   </div>
@@ -78,17 +71,14 @@
     <div class="card">
       <h2 style="font-size:0.95rem;font-weight:600;margin-bottom:16px;">Quick Actions</h2>
       <div style="display:flex;flex-direction:column;gap:8px;">
-        <a href="#" class="btn btn-secondary w-full" style="justify-content:flex-start" data-open-modal="modal-create-class">
-          <span>⬡</span> Create New Class
+        <a href="/admin/classes" class="btn btn-secondary w-full" style="justify-content:flex-start">
+          <span>➕</span> Create New Class
         </a>
         <a href="/admin/classes" class="btn btn-secondary w-full" style="justify-content:flex-start">
-          <span>⊞</span> Manage Classes
+          <span>📚</span> Manage Classes
         </a>
-        <a href="/admin/students?filter=unassigned" class="btn btn-secondary w-full" style="justify-content:flex-start">
-          <span>◎</span> View Unassigned Students
-        </a>
-        <a href="/admin/students" class="btn btn-secondary w-full" style="justify-content:flex-start">
-          <span>◌</span> All Students
+        <a href="/admin/staff" class="btn btn-secondary w-full" style="justify-content:flex-start">
+          <span>👤</span> Manage Staff & Admins
         </a>
       </div>
     </div>
@@ -96,35 +86,11 @@
     <div class="card" style="background:linear-gradient(135deg,rgba(255,161,22,0.06) 0%,transparent 100%)">
       <div style="font-size:0.75rem;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:var(--accent);margin-bottom:10px;">💡 Tip</div>
       <p style="font-size:0.82rem;color:var(--text-secondary);line-height:1.6;">
-        Share the <strong style="color:var(--text-primary)">invite link</strong> from each class page with your students. They register, verify their email, then join by clicking the link.
+        Share the <strong style="color:var(--text-primary)">invite link</strong> from each class page with your students. They can join instantly by providing their LeetCode Username – no account required.
       </p>
     </div>
   </div>
 
-</div>
-
-<!-- Create Class Modal -->
-<div class="modal-backdrop" id="modal-create-class">
-  <div class="modal">
-    <div class="modal-header">
-      <h3 class="modal-title">Create New Class</h3>
-      <button class="modal-close" data-close-modal="modal-create-class">✕</button>
-    </div>
-    <form action="/admin/classes" method="post">
-      <div class="form-group">
-        <label class="form-label" for="new-class-name">Class Name *</label>
-        <input id="new-class-name" class="form-control" type="text" name="name" placeholder="e.g. CS101 — Spring 2025" required>
-      </div>
-      <div class="form-group">
-        <label class="form-label" for="new-class-desc">Description</label>
-        <textarea id="new-class-desc" class="form-control" name="description" placeholder="Optional description of this class…"></textarea>
-      </div>
-      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:4px;">
-        <button type="button" class="btn btn-secondary" data-close-modal="modal-create-class">Cancel</button>
-        <button type="submit" class="btn btn-primary">Create Class</button>
-      </div>
-    </form>
-  </div>
 </div>
 
 {% endblock %}
