@@ -48,27 +48,3 @@ async def root(request: Request):
         return RedirectResponse("/admin", status_code=302)
     # If not logged in, show the public leaderboard for students
     return RedirectResponse("/leaderboard", status_code=302)
-
-@app.get("/debug-paths")
-async def debug_paths():
-    import os
-    from pathlib import Path
-    try:
-        cwd = os.getcwd()
-        base_dir = str(Path(__file__).resolve().parent)
-        files = []
-        for root, dirs, filenames in os.walk(cwd):
-            depth = root.replace(cwd, '').count(os.sep)
-            if depth > 2:
-                continue
-            for f in filenames:
-                files.append(os.path.join(root, f))
-        return {
-            "cwd": cwd,
-            "base_dir": base_dir,
-            "exists_templates": os.path.exists(os.path.join(base_dir, "templates")),
-            "exists_static": os.path.exists(os.path.join(base_dir, "static")),
-            "files_in_cwd": [f.replace(cwd, "") for f in files if "node_modules" not in f and ".venv" not in f and ".git" not in f]
-        }
-    except Exception as e:
-        return {"error": str(e)}
