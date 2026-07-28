@@ -1,6 +1,7 @@
 import secrets
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
+from typing import Optional
 from fastapi import APIRouter, Request, Form, Depends
 from fastapi.responses import RedirectResponse, HTMLResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
