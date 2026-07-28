@@ -28,7 +28,7 @@ async def public_index(request: Request, db: Session = Depends(get_db)):
         else:
             ungrouped.append(cls)
             
-    return templates.TemplateResponse("public/index.html", {
+    return templates.TemplateResponse("public_views/index.html", {
         "request": request,
         "grouped": grouped.values(),
         "ungrouped": ungrouped,
@@ -47,7 +47,7 @@ async def public_leaderboard(request: Request, class_id: str, db: Session = Depe
     for i, s in enumerate(leaderboard):
         s._rank = i + 1
 
-    return templates.TemplateResponse("public/leaderboard.html", {
+    return templates.TemplateResponse("public_views/leaderboard.html", {
         "request": request,
         "cls": cls,
         "leaderboard": leaderboard,
