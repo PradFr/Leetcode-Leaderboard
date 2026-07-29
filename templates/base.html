@@ -12,6 +12,7 @@
       document.documentElement.setAttribute('data-theme', 'dark');
     }
   </script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   {% block extra_head %}{% endblock %}
 </head>
 <body>
@@ -90,7 +91,10 @@
   <!-- Main Content -->
   <div class="main-content">
     <header class="topbar">
-      <div class="topbar-title">{% block page_title %}{% endblock %}</div>
+      <div style="display:flex; align-items:center; gap:10px;">
+        <button type="button" id="mobile-sidebar-toggle" class="btn btn-ghost btn-sm mobile-menu-btn" title="Toggle Navigation">☰</button>
+        <div class="topbar-title">{% block page_title %}{% endblock %}</div>
+      </div>
       <div class="topbar-actions">{% block topbar_actions %}{% endblock %}</div>
     </header>
 
