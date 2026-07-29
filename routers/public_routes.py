@@ -12,8 +12,11 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
 
 
+import auth
+
 @router.get("/leaderboard", response_class=HTMLResponse)
 async def public_index(request: Request, db: Session = Depends(get_db)):
+    user = auth.get_current_user(request)
     categories = db.query(Category).order_by(Category.name).all()
     # Eager load classes if not configured, or just fetch all
     classes = db.query(Class).order_by(Class.created_at.desc()).all()
@@ -30,6 +33,7 @@ async def public_index(request: Request, db: Session = Depends(get_db)):
             
     return templates.TemplateResponse("public_views/index.html", {
         "request": request,
+        "user": user,
         "grouped": grouped.values(),
         "ungrouped": ungrouped,
     })
@@ -37,6 +41,7 @@ async def public_index(request: Request, db: Session = Depends(get_db)):
 
 @router.get("/leaderboard/{class_id}", response_class=HTMLResponse)
 async def public_leaderboard(request: Request, class_id: str, db: Session = Depends(get_db)):
+    user = auth.get_current_user(request)
     cls = db.query(Class).filter(Class.id == class_id).first()
     if not cls:
         return HTMLResponse("Class not found", status_code=404)
@@ -49,10 +54,12 @@ async def public_leaderboard(request: Request, class_id: str, db: Session = Depe
 
     return templates.TemplateResponse("public_views/leaderboard.html", {
         "request": request,
+        "user": user,
         "cls": cls,
         "leaderboard": leaderboard,
         "total_in_class": len(leaderboard),
     })
+
 
 @router.get("/join/{token}", response_class=HTMLResponse)
 async def join_class_page(request: Request, token: str, db: Session = Depends(get_db)):

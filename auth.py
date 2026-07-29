@@ -73,7 +73,7 @@ def verify_supabase_jwt(token: str) -> Optional[dict]:
 def get_or_create_profile(user_id: str, email: str, full_name: str = None) -> Profile:
     db = SessionLocal()
     try:
-        uid = uuid.UUID(user_id)
+        uid = uuid.UUID(user_id) if isinstance(user_id, str) else user_id
         profile = db.query(Profile).filter(Profile.id == uid).first()
         if not profile:
             profile = Profile(
@@ -103,8 +103,10 @@ def get_current_user(request: Request) -> Optional[dict]:
 
     db = SessionLocal()
     try:
-        uid = uuid.UUID(user_id)
+        uid = uuid.UUID(user_id) if isinstance(user_id, str) else user_id
         profile = db.query(Profile).filter(Profile.id == uid).first()
+    except Exception:
+        profile = None
     finally:
         db.close()
 
