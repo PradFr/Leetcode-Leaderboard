@@ -80,10 +80,15 @@
 
 <!-- Leaderboard Table -->
 <div class="card" style="padding:0;overflow:hidden">
-  <div style="padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
-    <div style="display:flex;align-items:center;gap:16px">
-      <h2 style="font-size:0.95rem;font-weight:600">Leaderboard</h2>
-      <select id="sort-dropdown" class="form-control" style="width:auto;padding:4px 8px;font-size:0.8rem;background:var(--bg-overlay)">
+  <div class="leaderboard-toolbar">
+    <div class="leaderboard-toolbar-left">
+      <h2 style="font-size:0.95rem;font-weight:600;margin:0">Leaderboard</h2>
+      <div class="search-box-wrap">
+        <span class="search-box-icon">🔍</span>
+        <input type="text" id="leaderboard-search" class="search-box-input" placeholder="Search name, reg no, username...">
+        <button type="button" id="search-clear-btn" class="search-box-clear" title="Clear search">✕</button>
+      </div>
+      <select id="sort-dropdown" class="form-control" style="width:auto;padding:5px 8px;font-size:0.8rem;background:var(--bg-overlay)">
         <option value="points">Sort by: Points</option>
         <option value="total">Sort by: Total Solved</option>
         <option value="easy">Sort by: Easy</option>
@@ -92,8 +97,10 @@
         <option value="rank">Sort by: LC Rank</option>
       </select>
     </div>
-    <div style="display:flex; align-items:center; gap: 16px;">
-      <span style="font-size:0.78rem;color:var(--text-muted)">Ranked by Points initially</span>
+    <div class="leaderboard-toolbar-right">
+      <button type="button" class="btn btn-secondary btn-sm" data-open-modal="modal-export" style="display:flex;align-items:center;gap:6px">
+        <span>📥</span> Export
+      </button>
       <div style="display:flex; align-items:center; gap:8px;">
         <span style="font-size:0.8rem; color:var(--text-secondary)">Name</span>
         <label class="theme-switch" for="display-toggle-admin">
@@ -107,7 +114,7 @@
 
   {% if leaderboard %}
   <div class="table-wrap" style="border:none;border-radius:0">
-    <table data-sortable>
+    <table data-leaderboard-table data-sortable>
       <thead>
         <tr>
           <th style="width:48px">#</th>
@@ -127,7 +134,7 @@
       </thead>
       <tbody>
         {% for s in leaderboard %}
-        <tr>
+        <tr data-student-row data-points="{{ s.points or 0 }}" data-total="{{ s.solved_total or 0 }}" data-easy="{{ s.solved_easy or 0 }}" data-med="{{ s.solved_medium or 0 }}" data-hard="{{ s.solved_hard or 0 }}" data-rank="{{ s.ranking or 0 }}" data-lc-user="{{ s.leetcode_username or '' }}">
           <td>
             <span class="rank-badge rank-{{ s._rank if s._rank <= 3 else 'n' }}">{{ s._rank }}</span>
           </td>
@@ -142,7 +149,7 @@
               </div>
             </div>
           </td>
-          <td data-val="{{ s.leetcode_username or '' }}">
+          <td data-val="{{ s.leetcode_username or '' }}" data-leetcode-user>
             {% if s.leetcode_username %}
             <a href="https://leetcode.com/{{ s.leetcode_username }}" target="_blank"
                style="font-family:var(--font-mono);font-size:0.82rem;color:var(--accent)">
@@ -152,16 +159,16 @@
             <span style="color:var(--text-muted);font-size:0.8rem">Not set</span>
             {% endif %}
           </td>
-          <td data-val="{{ s.solved_easy or 0 }}"><span class="pill pill-easy">{{ s.solved_easy or 0 }}</span></td>
-          <td data-val="{{ s.solved_medium or 0 }}"><span class="pill pill-medium">{{ s.solved_medium or 0 }}</span></td>
-          <td data-val="{{ s.solved_hard or 0 }}"><span class="pill pill-hard">{{ s.solved_hard or 0 }}</span></td>
-          <td data-val="{{ s.solved_total or 0 }}">
+          <td data-val="{{ s.solved_easy or 0 }}" data-col="easy"><span class="pill pill-easy">{{ s.solved_easy or 0 }}</span></td>
+          <td data-val="{{ s.solved_medium or 0 }}" data-col="med"><span class="pill pill-medium">{{ s.solved_medium or 0 }}</span></td>
+          <td data-val="{{ s.solved_hard or 0 }}" data-col="hard"><span class="pill pill-hard">{{ s.solved_hard or 0 }}</span></td>
+          <td data-val="{{ s.solved_total or 0 }}" data-col="total">
             <strong style="color:var(--text-primary);font-family:var(--font-mono)">{{ s.solved_total or 0 }}</strong>
           </td>
-          <td data-val="{{ s.points or 0 }}">
+          <td data-val="{{ s.points or 0 }}" data-col="points">
             <strong style="color:var(--purple);font-family:var(--font-mono);font-size:1.1em;">{{ s.points or 0 }}</strong>
           </td>
-          <td data-val="{{ s.ranking or 0 }}">
+          <td data-val="{{ s.ranking or 0 }}" data-col="rank">
             <span style="font-family:var(--font-mono);font-size:0.82rem;color:var(--text-secondary)">
               {{ '{:,}'.format(s.ranking) if s.ranking else '—' }}
             </span>
@@ -184,6 +191,90 @@
   </div>
   {% endif %}
 </div>
+
+<!-- Admin Export Modal -->
+<div class="modal-backdrop" id="modal-export">
+  <div class="modal" style="max-width: 460px; text-align: left; padding: 24px;">
+    <div class="modal-header" style="margin-bottom: 16px;">
+      <h3 class="modal-title" style="display:flex; align-items:center; gap:8px;">
+        <span>📥</span> Export Leaderboard Data
+      </h3>
+      <button class="modal-close" data-close-modal="modal-export">✕</button>
+    </div>
+
+    <p style="color:var(--text-secondary); font-size:0.85rem; margin-bottom: 16px;">
+      Export student records matching the current active sort order into a structured file format.
+    </p>
+
+    <!-- Range Selector -->
+    <div style="margin-bottom: 20px;">
+      <label style="font-size:0.85rem; font-weight:600; color:var(--text-primary); display:block; margin-bottom:8px;">
+        Selection Range
+      </label>
+      <div style="display:flex; gap:16px; align-items:center; margin-bottom:10px;">
+        <label style="display:flex; align-items:center; gap:6px; font-size:0.85rem; cursor:pointer;">
+          <input type="radio" name="export-range-type" id="export-range-all" value="all" checked>
+          <span>Whole List (<span id="export-total-count-text">{{ leaderboard|length }}</span> students)</span>
+        </label>
+        <label style="display:flex; align-items:center; gap:6px; font-size:0.85rem; cursor:pointer;">
+          <input type="radio" name="export-range-type" id="export-range-custom" value="custom">
+          <span>Custom Positions</span>
+        </label>
+      </div>
+
+      <div id="export-range-inputs-box" class="export-range-inputs" style="display:none;">
+        <div style="flex:1;">
+          <span style="font-size:0.75rem; color:var(--text-secondary);">From Position</span>
+          <input type="number" id="export-from-pos" class="form-control" value="1" min="1" max="{{ leaderboard|length }}">
+        </div>
+        <div style="align-self:flex-end; padding-bottom:8px; color:var(--text-muted); font-weight:bold;">to</div>
+        <div style="flex:1;">
+          <span style="font-size:0.75rem; color:var(--text-secondary);">To Position</span>
+          <input type="number" id="export-to-pos" class="form-control" value="{{ leaderboard|length }}" min="1" max="{{ leaderboard|length }}">
+        </div>
+      </div>
+    </div>
+
+    <!-- Export Format Selector -->
+    <div style="margin-bottom: 20px;">
+      <label style="font-size:0.85rem; font-weight:600; color:var(--text-primary); display:block; margin-bottom:8px;">
+        File Format
+      </label>
+      <div class="export-format-grid">
+        <div class="export-format-card selected" data-format="xlsx">
+          <input type="radio" name="export-format" value="xlsx" checked>
+          <div style="font-size:1.4rem;">📊</div>
+          <div style="font-size:0.82rem; margin-top:2px;">Excel (.xlsx)</div>
+        </div>
+        <div class="export-format-card" data-format="csv">
+          <input type="radio" name="export-format" value="csv">
+          <div style="font-size:1.4rem;">📄</div>
+          <div style="font-size:0.82rem; margin-top:2px;">CSV (.csv)</div>
+        </div>
+        <div class="export-format-card" data-format="json">
+          <input type="radio" name="export-format" value="json">
+          <div style="font-size:1.4rem;">📋</div>
+          <div style="font-size:0.82rem; margin-top:2px;">JSON (.json)</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Error validation container -->
+    <div id="export-error-alert" class="validation-error-alert">
+      <span>⚠</span>
+      <span id="export-error-message">Invalid position selection</span>
+    </div>
+
+    <!-- Modal Footer Actions -->
+    <div style="display:flex; gap:12px; justify-content:flex-end; margin-top:20px;">
+      <button type="button" class="btn btn-secondary" data-close-modal="modal-export">Cancel</button>
+      <button type="button" class="btn btn-primary" id="export-submit-btn" style="display:flex; align-items:center; gap:6px;">
+        <span>📥</span> Download File
+      </button>
+    </div>
+  </div>
+</div>
+
 
 <script>
 function refreshStats(url, btn) {

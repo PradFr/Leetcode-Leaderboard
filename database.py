@@ -7,14 +7,13 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import declarative_base, sessionmaker, relationship
 from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.pool import NullPool
 
 load_dotenv(override=True)
 
 DATABASE_URL = os.getenv("DATABASE_URL")
 if not DATABASE_URL:
     raise ValueError("DATABASE_URL environment variable is missing!")
-    
-from sqlalchemy.pool import NullPool
 
 # SQLAlchemy 2.0 requires postgresql:// instead of postgres://
 if DATABASE_URL.startswith("postgres://"):
@@ -24,6 +23,7 @@ if os.getenv("VERCEL"):
     engine = create_engine(DATABASE_URL, poolclass=NullPool)
 else:
     engine = create_engine(DATABASE_URL, pool_pre_ping=True)
+
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
@@ -45,6 +45,7 @@ class Profile(Base):
     email = Column(String, nullable=False, unique=True)
     full_name = Column(String)
     role = Column(String, default="admin")
+    leetcode_username = Column(String, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
 
@@ -110,6 +111,7 @@ class Student(Base):
 
     id = Column(String, primary_key=True, default=lambda: uuid.uuid4().hex)
     class_id = Column(String, ForeignKey("public.classes.id", ondelete="SET NULL"), nullable=True)
+    user_id = Column(String, nullable=True)
     leetcode_username = Column(String, nullable=False)
     register_number = Column(String, nullable=True)
     display_name = Column(String, nullable=False)
@@ -122,6 +124,11 @@ class Student(Base):
     ranking = Column(Integer, default=0)
     last_updated = Column(DateTime(timezone=True), server_default=func.now())
     joined_at = Column(DateTime(timezone=True), server_default=func.now())
+    email = Column(String, nullable=True)
+    department = Column(String, nullable=True)
+    batch_year = Column(String, nullable=True)
+    is_approved = Column(Boolean, default=True)
+    role = Column(String, default="student")
 
     cls = relationship("Class", back_populates="students")
 
@@ -134,18 +141,14 @@ def ensure_tables():
     try:
         with engine.connect() as conn:
             conn.execute(text("ALTER TABLE public.students ALTER COLUMN user_id DROP NOT NULL;"))
-            
             try:
                 conn.execute(text("ALTER TABLE public.students ADD COLUMN register_number VARCHAR;"))
             except Exception:
                 pass # Already exists
-            
-            # Add category_id if it doesn't exist
             try:
                 conn.execute(text("ALTER TABLE public.classes ADD COLUMN category_id VARCHAR(32) REFERENCES public.categories(id) ON DELETE CASCADE;"))
             except Exception:
                 pass # Already exists
-            
             conn.commit()
     except Exception as e:
         print(f"Migration error (ignoring): {e}")
