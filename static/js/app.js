@@ -213,10 +213,17 @@ document.addEventListener('DOMContentLoaded', () => {
     if (currentTheme === 'dark') {
       document.documentElement.setAttribute('data-theme', 'dark');
       toggle.checked = true;
+    } else {
+      document.documentElement.removeAttribute('data-theme');
+      toggle.checked = false;
     }
     toggle.addEventListener('change', (e) => {
       if (e.target.checked) {
         document.documentElement.setAttribute('data-theme', 'dark');
+        localStorage.setItem('theme', 'dark');
+      } else {
+        document.documentElement.removeAttribute('data-theme');
+        localStorage.setItem('theme', 'light');
       }
     });
   }
