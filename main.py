@@ -17,6 +17,21 @@ load_dotenv(override=True)
 SECRET_KEY = os.getenv("SUPABASE_JWT_SECRET", "changeme-secret-key")
 
 app = FastAPI(title="LeetCode Leaderboard", docs_url=None, redoc_url=None)
+
+class VercelPathMiddleware:
+    def __init__(self, app):
+        self.app = app
+
+    async def __call__(self, scope, receive, send):
+        if scope["type"] == "http":
+            path = scope.get("path", "")
+            if path.startswith("/api/index.py"):
+                scope["path"] = path.replace("/api/index.py", "", 1) or "/"
+            elif path.startswith("/api/index"):
+                scope["path"] = path.replace("/api/index", "", 1) or "/"
+        await self.app(scope, receive, send)
+
+app.add_middleware(VercelPathMiddleware)
 app.add_middleware(SessionMiddleware, secret_key=SECRET_KEY, max_age=86400 * 7)
 
 from pathlib import Path
