@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+
+{% block title %}Leaderboard: {{ cls.name }} — LeetCode Tracker{% endblock %}
+{% block page_title %}{{ cls.name }} Leaderboard{% endblock %}
+
+{% block content %}
+<div class="content-wrapper">
+  
+  {% if request.query_params.get("success") %}
+  <div class="alert alert-success" style="margin-bottom: 24px;">
+    ✓ {{ request.query_params.get("success") }}
+  </div>
+  {% endif %}
+
+  <div class="card" style="padding: 24px;">
+    {% if not leaderboard %}
+      <div style="text-align: center; padding: 40px; color: var(--text-secondary);">
+        <div style="font-size: 3rem; margin-bottom: 16px;">😔</div>
+        <h3>No students yet!</h3>
+        <p>This class leaderboard is currently empty.</p>
+      </div>
+    {% else %}
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 16px;">
+        <h3 style="margin: 0; font-size: 1.1rem; color: var(--text-primary);">Leaderboard</h3>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span style="font-size:0.8rem; color:var(--text-secondary)">Name</span>
+          <label class="theme-switch" for="display-toggle-public">
+            <input type="checkbox" id="display-toggle-public" onchange="document.body.classList.toggle('show-reg-nums', this.checked)">
+            <span class="slider round"></span>
+          </label>
+          <span style="font-size:0.8rem; color:var(--text-secondary)">Reg No.</span>
+        </div>
+      </div>
+      <table class="table" style="width: 100%; border-collapse: collapse; text-align: left;">
+        <thead>
+          <tr style="border-bottom: 1px solid var(--border);">
+            <th style="padding: 12px 0; color: var(--text-secondary); width: 60px;">Rank</th>
+            <th style="padding: 12px 0; color: var(--text-secondary);">Student</th>
+            <th style="padding: 12px 0; color: var(--text-secondary);">
+              Points
+              <button type="button" class="btn-info-icon" data-open-modal="modal-points-info" title="How points are calculated">ℹ</button>
+            </th>
+            <th style="padding: 12px 0; color: var(--text-secondary);">Total Solved</th>
+            <th style="padding: 12px 0; color: var(--easy);">Easy</th>
+            <th style="padding: 12px 0; color: var(--medium);">Medium</th>
+            <th style="padding: 12px 0; color: var(--hard);">Hard</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for s in leaderboard %}
+          <tr style="border-bottom: 1px solid var(--border);">
+            <td style="padding: 16px 0; font-weight: bold; font-size: 1.1rem; color: var(--text-primary);">
+              #{{ s._rank }}
+            </td>
+            <td style="padding: 16px 0;">
+              <div style="font-weight: 600;">
+                <span class="display-name-text">{{ s.display_name }}</span>
+                <span class="display-reg-text" style="display: none;">{{ s.register_number or 'N/A' }}</span>
+              </div>
+              <div style="font-size: 0.8rem; color: var(--text-secondary);">@{{ s.leetcode_username }}</div>
+            </td>
+            <td style="padding: 16px 0; font-weight: bold; color: var(--accent);">
+              {{ s.points }}
+            </td>
+            <td style="padding: 16px 0;">{{ s.solved_total }}</td>
+            <td style="padding: 16px 0; color: var(--easy);">{{ s.solved_easy }}</td>
+            <td style="padding: 16px 0; color: var(--medium);">{{ s.solved_medium }}</td>
+            <td style="padding: 16px 0; color: var(--hard);">{{ s.solved_hard }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% endif %}
+  </div>
+
+</div>
+{% endblock %}
