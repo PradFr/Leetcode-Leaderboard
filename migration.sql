@@ -42,11 +42,23 @@ CREATE TABLE IF NOT EXISTS public.students (
   UNIQUE(class_id, leetcode_username)
 );
 
+CREATE TABLE IF NOT EXISTS public.test_results (
+  id          UUID PRIMARY KEY,
+  class_id    TEXT REFERENCES public.classes(id) ON DELETE CASCADE,
+  test_name   TEXT NOT NULL,
+  columns     JSONB NOT NULL,
+  data        JSONB NOT NULL,
+  uploaded_by TEXT,
+  upload_date TIMESTAMPTZ DEFAULT NOW(),
+  expires_at  TIMESTAMPTZ
+);
+
 -- Disable RLS (Since we rely on server-side FastAPI endpoints to handle logic/auth)
 ALTER TABLE public.profiles DISABLE ROW LEVEL SECURITY;
 ALTER TABLE public.classes  DISABLE ROW LEVEL SECURITY;
 ALTER TABLE public.invites  DISABLE ROW LEVEL SECURITY;
 ALTER TABLE public.students DISABLE ROW LEVEL SECURITY;
+ALTER TABLE public.test_results DISABLE ROW LEVEL SECURITY;
 
 GRANT ALL ON ALL TABLES IN SCHEMA public TO postgres;
 GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO postgres;

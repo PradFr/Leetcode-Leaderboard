@@ -14,7 +14,7 @@
       {% if group.classes %}
         <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px;">
           {% for cls in group.classes %}
-            <a href="/leaderboard/{{ cls.id }}" style="text-decoration: none; color: inherit;">
+            <a href="/class/{{ cls.id }}/menu" style="text-decoration: none; color: inherit;">
               <div class="card" style="transition: transform 0.2s, box-shadow 0.2s;">
                 <h4 style="margin: 0 0 10px 0; color: var(--primary);">{{ cls.name }}</h4>
                 <p style="color: var(--text-secondary); margin: 0; font-size: 0.9rem;">

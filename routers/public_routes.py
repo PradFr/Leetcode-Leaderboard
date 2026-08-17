@@ -4,7 +4,7 @@ from fastapi import APIRouter, Request, Form, Depends
 from fastapi.responses import RedirectResponse, HTMLResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
-from database import get_db, Class, Invite, Student, Category
+from database import get_db, Class, Invite, Student, Category, TestResult
 from utils import fetch_leetcode_stats
 
 router = APIRouter()
@@ -36,6 +36,52 @@ async def public_index(request: Request, db: Session = Depends(get_db)):
         "user": user,
         "grouped": grouped.values(),
         "ungrouped": ungrouped,
+    })
+
+
+@router.get("/class/{class_id}/menu", response_class=HTMLResponse)
+async def public_class_menu(request: Request, class_id: str, db: Session = Depends(get_db)):
+    user = auth.get_current_user(request)
+    cls = db.query(Class).filter(Class.id == class_id).first()
+    if not cls:
+        return HTMLResponse("Class not found", status_code=404)
+
+    return templates.TemplateResponse("public_views/class_menu.html", {
+        "request": request,
+        "user": user,
+        "cls": cls,
+    })
+
+
+@router.get("/class/{class_id}/tests", response_class=HTMLResponse)
+async def public_class_tests(request: Request, class_id: str, db: Session = Depends(get_db)):
+    user = auth.get_current_user(request)
+    cls = db.query(Class).filter(Class.id == class_id).first()
+    if not cls:
+        return HTMLResponse("Class not found", status_code=404)
+
+    from sqlalchemy import or_
+    import datetime
+
+    now = datetime.datetime.now(datetime.timezone.utc)
+    
+    # Lazy deletion of expired tests
+    expired_tests = db.query(TestResult).filter(TestResult.expires_at < now).all()
+    if expired_tests:
+        for t in expired_tests:
+            db.delete(t)
+        db.commit()
+
+    active_tests = db.query(TestResult).filter(
+        TestResult.class_id == class_id,
+        or_(TestResult.expires_at == None, TestResult.expires_at >= now)
+    ).order_by(TestResult.upload_date.desc()).all()
+
+    return templates.TemplateResponse("public_views/test_results.html", {
+        "request": request,
+        "user": user,
+        "cls": cls,
+        "tests": active_tests,
     })
 
 

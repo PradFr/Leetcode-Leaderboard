@@ -7,9 +7,13 @@ An elegant, real-time LeetCode tracker and ranking dashboard designed for colleg
 ## ✨ Features
 
 - **📊 Real-time Stats Syncing:** Automatically fetches public LeetCode profiles to track Easy, Medium, Hard, and total solved counts.
+- **📑 Excel / CSV Test Results Uploads:** Staff can drag-and-drop or upload daily test results in Excel (`.xlsx`, `.xls`) or CSV formats with any custom column schema.
+- **🔍 Live Multi-Column Sheet Search:** Real-time client-side search across all columns (names, register numbers, scores, rankings) for any uploaded test.
+- **⏱️ Configurable Visibility & Auto-Cleanup:** Set test visibility duration (24h, 48h, 1 week, 1 month, or Permanent) with automated lazy-deletion of expired test data.
+- **🔀 Class Options Navigation Hub:** Intuitive navigation menu branching between the LeetCode Leaderboard and Academic Test Results.
 - **🏫 Class & Category Hierarchy:** Group students by department (e.g., CSE, IT), batch (e.g., 2026, 2027), or specific classes.
 - **🎫 Secure Invitation System:** Admins can generate unique signup tokens so students can register themselves to specific classes.
-- **🔐 Admin & Staff Dashboard:** Secure administration panel for staff to manage invite links, add/remove classes, customize categories, and monitor student registration.
+- **🔐 Admin & Staff Dashboard:** Secure administration panel for staff to manage tests, invite links, classes, categories, and student registrations.
 - **🌓 Modern Light/Dark Mode:** Sleek, modern UI with theme-switching capabilities to suit student preferences.
 - **⚡ Serverless-Ready Architecture:** Fully optimized for seamless deployments on Vercel Serverless Functions with Supabase.
 
@@ -17,9 +21,10 @@ An elegant, real-time LeetCode tracker and ranking dashboard designed for colleg
 
 ## 🛠️ Tech Stack
 
-- **Backend:** [FastAPI](https://fastapi.tiangolo.com/) (Python 3.12+)
+- **Backend:** [FastAPI](https://fastapi.tiangolo.com/) (Python 3.10+)
+- **Data Processing:** [Pandas](https://pandas.pydata.org/), [OpenPyXL](https://openpyxl.readthedocs.io/)
 - **Database:** [Supabase](https://supabase.com/) / PostgreSQL
-- **ORM:** [SQLAlchemy](https://www.sqlalchemy.org/)
+- **ORM:** [SQLAlchemy](https://www.sqlalchemy.org/) (JSONB support)
 - **Frontend:** HTML5, Jinja2 Templates, Vanilla CSS, JavaScript
 - **Auth:** Supabase Auth (JWT validated)
 - **Deployment:** Vercel (Serverless)
@@ -32,9 +37,9 @@ An elegant, real-time LeetCode tracker and ranking dashboard designed for colleg
 ├── api/
 │   └── index.py            # Vercel Serverless entrypoint
 ├── routers/
-│   ├── admin_routes.py     # Admin panel, invites, & student management
+│   ├── admin_routes.py     # Admin panel, test uploads, invites, & student management
 │   ├── auth_routes.py      # Authentication (Supabase integration)
-│   └── public_routes.py    # Public leaderboard views
+│   └── public_routes.py    # Public leaderboard & test results views
 ├── static/
 │   ├── css/
 │   │   └── main.css        # Custom styles & design tokens
@@ -42,13 +47,13 @@ An elegant, real-time LeetCode tracker and ranking dashboard designed for colleg
 │   │   └── app.js          # Client-side interactivity
 │   └── logo.jpg            # College/Platform logo
 ├── templates/
-│   ├── admin/              # Admin dashboard templates
-│   ├── public_views/       # Public-facing leaderboards
+│   ├── admin/              # Admin dashboard templates (classes, staff, tests)
+│   ├── public_views/       # Public-facing views (index, class_menu, leaderboard, test_results)
 │   ├── base.html           # Core layout containing navbar, sidebar, theme controls
 │   ├── join.html           # Student self-registration invite page
 │   └── login.html          # Staff login page
 ├── auth.py                 # Core authentication helper functions
-├── database.py             # SQLAlchemy configuration & database sessions
+├── database.py             # SQLAlchemy configuration, models & database sessions
 ├── main.py                 # Main FastAPI application definition
 ├── utils.py                # LeetCode statistics scraper & points calculator
 ├── vercel.json             # Vercel deployment routing configuration
