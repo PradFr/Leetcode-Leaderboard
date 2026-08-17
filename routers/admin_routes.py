@@ -2,15 +2,16 @@ import secrets
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Optional
-from fastapi import APIRouter, Request, Form, Depends
+from fastapi import APIRouter, Request, Form, Depends, UploadFile, File
 from fastapi.responses import RedirectResponse, HTMLResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 import uuid
 
 import auth
-from database import get_db, Profile, Class, Invite, Student, Category
+from database import get_db, Profile, Class, Invite, Student, Category, TestResult
 from utils import fetch_leetcode_stats
+import pandas as pd
 
 router = APIRouter(prefix="/admin")
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -192,9 +193,11 @@ async def class_detail(request: Request, class_id: str, db: Session = Depends(ge
     invite = db.query(Invite).filter(Invite.class_id == class_id, Invite.is_active == True).first()
     base_url = str(request.base_url).rstrip("/")
     invite_link = f"{base_url}/join/{invite.token}" if invite else None
+    
+    tests = db.query(TestResult).filter(TestResult.class_id == class_id).order_by(TestResult.upload_date.desc()).all()
 
     return templates.TemplateResponse("admin/class_detail.html", {
-        "request": request, "user": user, "cls": cls, "leaderboard": leaderboard, "invite_link": invite_link
+        "request": request, "user": user, "cls": cls, "leaderboard": leaderboard, "invite_link": invite_link, "tests": tests
     })
 
 
@@ -305,6 +308,84 @@ async def delete_class(request: Request, class_id: str, db: Session = Depends(ge
         db.delete(cls)
         db.commit()
     return RedirectResponse("/admin/classes", status_code=302)
+
+@router.post("/classes/{class_id}/tests/upload")
+async def upload_test(
+    request: Request, 
+    class_id: str, 
+    test_name: str = Form(...),
+    duration: str = Form(...),
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db)
+):
+    user = _get_admin(request)
+    if not user:
+        return RedirectResponse("/login", status_code=302)
+        
+    if not file.filename.endswith(('.xlsx', '.xls', '.csv')):
+        return RedirectResponse(f"/admin/classes/{class_id}?error=Invalid+file+format", status_code=302)
+        
+    try:
+        import io
+        contents = await file.read()
+        if file.filename.endswith('.csv'):
+            df = pd.read_csv(io.BytesIO(contents))
+        else:
+            df = pd.read_excel(io.BytesIO(contents))
+            
+        df = df.fillna("")
+        
+        # Round all float columns to 2 decimal places
+        for col in df.columns:
+            try:
+                if pd.api.types.is_float_dtype(df[col]):
+                    df[col] = df[col].round(2)
+            except Exception:
+                pass
+
+        import json
+        # Convert to JSON string first to handle all pandas/numpy types (like int64, Timestamp), then back to dicts
+        data = json.loads(df.to_json(orient="records", date_format="iso"))
+        columns = [str(c) for c in df.columns]
+        
+        expires_at = None
+        now = datetime.now(timezone.utc)
+        if duration == "24h":
+            expires_at = now + timedelta(hours=24)
+        elif duration == "48h":
+            expires_at = now + timedelta(hours=48)
+        elif duration == "1w":
+            expires_at = now + timedelta(weeks=1)
+        elif duration == "1m":
+            expires_at = now + timedelta(days=30)
+            
+        new_test = TestResult(
+            class_id=class_id,
+            test_name=test_name,
+            columns=columns,
+            data=data,
+            uploaded_by=user["id"],
+            expires_at=expires_at
+        )
+        db.add(new_test)
+        db.commit()
+        return RedirectResponse(f"/admin/classes/{class_id}?success=Test+uploaded", status_code=302)
+        
+    except Exception as e:
+        print(f"Error parsing file: {e}")
+        return RedirectResponse(f"/admin/classes/{class_id}?error=Could+not+parse+file", status_code=302)
+
+@router.post("/classes/{class_id}/tests/{test_id}/delete")
+async def delete_test(request: Request, class_id: str, test_id: str, db: Session = Depends(get_db)):
+    user = _get_admin(request)
+    if not user:
+        return RedirectResponse("/login", status_code=302)
+        
+    test = db.query(TestResult).filter(TestResult.id == test_id, TestResult.class_id == class_id).first()
+    if test:
+        db.delete(test)
+        db.commit()
+    return RedirectResponse(f"/admin/classes/{class_id}?success=Test+deleted", status_code=302)
 
 
 @router.post("/refresh-stats/{class_id}")

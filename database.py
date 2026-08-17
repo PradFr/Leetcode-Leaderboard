@@ -6,7 +6,7 @@ from sqlalchemy import (
     Text, DateTime, ForeignKey, func, UniqueConstraint
 )
 from sqlalchemy.orm import declarative_base, sessionmaker, relationship
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.dialects.postgresql import UUID, JSONB
 from sqlalchemy.pool import NullPool
 
 load_dotenv(override=True)
@@ -131,6 +131,25 @@ class Student(Base):
     role = Column(String, default="student")
 
     cls = relationship("Class", back_populates="students")
+
+
+# -----------------------------------------------------------------------------
+# Test Results
+# -----------------------------------------------------------------------------
+class TestResult(Base):
+    __tablename__ = "test_results"
+    __table_args__ = {"schema": "public"}
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    class_id = Column(String, ForeignKey("public.classes.id", ondelete="CASCADE"), nullable=False)
+    test_name = Column(String, nullable=False)
+    columns = Column(JSONB, nullable=False)
+    data = Column(JSONB, nullable=False)
+    uploaded_by = Column(String, nullable=True)
+    upload_date = Column(DateTime(timezone=True), server_default=func.now())
+    expires_at = Column(DateTime(timezone=True), nullable=True)
+
+    cls = relationship("Class")
 
 
 from sqlalchemy import text
