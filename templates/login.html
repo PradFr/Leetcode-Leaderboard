@@ -1,18 +1,21 @@
+{% from "components/icons.html" import icon %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Admin Sign In — LeetCode Leaderboard</title>
-  <meta name="description" content="Sign in to your LeetCode Leaderboard admin account">
-  <link rel="stylesheet" href="/static/css/main.css">
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏆</text></svg>">
-  <style>
-    .lc-stat { display: flex; flex-direction: column; align-items: center; gap: 2px; }
-    .lc-stat-val { font-size: 1.4rem; font-weight: 700; color: var(--text-primary); font-family: var(--font-mono); }
-    .lc-stat-lbl { font-size: 0.7rem; color: var(--text-muted); }
-    .hero-stats { display: flex; gap: 32px; margin-top: 40px; }
-  </style>
+  <title>Portal Sign In — KAHE Placement Cell</title>
+  <meta name="description" content="Sign in to your KAHE Placement Cell leaderboard portal">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Outfit:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/css/main.css?v=4">
+  <link rel="icon" href="/static/logo.jpg">
+  <script>
+    if (localStorage.getItem('theme') === 'dark') {
+      document.documentElement.setAttribute('data-theme', 'dark');
+    }
+  </script>
 </head>
 <body>
 
@@ -20,66 +23,116 @@
   <!-- Hero Panel -->
   <div class="auth-hero">
     <div class="auth-hero-logo">
-      <div class="logo-box">LC</div>
+      <div class="brand-icon-box">
+        {{ icon('lightning', size="22px") }}
+      </div>
       <div class="brand-name">
-        LeetCode Leaderboard
-        <span>Competitive Programming Tracker</span>
+        KAHE
+        <span>Placement Cell</span>
       </div>
     </div>
 
-    <h2>Admin Portal.</h2>
-    <p>Manage classes, invite students to public leaderboards, and monitor stats across your institution.</p>
+    <h2>Competitive Programming Tracker.</h2>
+    <p>Monitor student progress, track problem-solving statistics, schedule automated syncs, and generate live cohort leaderboards.</p>
 
     <div class="auth-features">
-      <div class="auth-feature"><div class="check">✓</div> Create classes and cohorts</div>
-      <div class="auth-feature"><div class="check">✓</div> Generate invite links for public leaderboards</div>
-      <div class="auth-feature"><div class="check">✓</div> Manage staff and admin accounts</div>
+      <div class="auth-feature">
+        <div class="check">{{ icon('check', size="12px") }}</div>
+        Real-time weighted scoring (Easy, Medium, Hard)
+      </div>
+      <div class="auth-feature">
+        <div class="check">{{ icon('check', size="12px") }}</div>
+        Instant invite links for guest student leaderboards
+      </div>
+      <div class="auth-feature">
+        <div class="check">{{ icon('check', size="12px") }}</div>
+        Automated 24h stats refresh and activity monitoring
+      </div>
+      <div class="auth-feature">
+        <div class="check">{{ icon('check', size="12px") }}</div>
+        Role-based staff assignments and class controls
+      </div>
+    </div>
+
+    <div style="margin-top: 48px; display: flex; gap: 24px;">
+      <div>
+        <div style="font-family: var(--font-display); font-size: var(--text-2xl); font-weight: 800; color: var(--text-primary);">24/7</div>
+        <div style="font-size: var(--text-xs); color: var(--text-muted); font-weight:600; text-transform:uppercase; letter-spacing:0.04em;">Auto Sync</div>
+      </div>
+      <div style="width: 1px; background: var(--border);"></div>
+      <div>
+        <div style="font-family: var(--font-display); font-size: var(--text-2xl); font-weight: 800; color: var(--accent);">Live</div>
+        <div style="font-size: var(--text-xs); color: var(--text-muted); font-weight:600; text-transform:uppercase; letter-spacing:0.04em;">LeetCode Stats</div>
+      </div>
+      <div style="width: 1px; background: var(--border);"></div>
+      <div>
+        <div style="font-family: var(--font-display); font-size: var(--text-2xl); font-weight: 800; color: var(--purple);">100%</div>
+        <div style="font-size: var(--text-xs); color: var(--text-muted); font-weight:600; text-transform:uppercase; letter-spacing:0.04em;">Role Protected</div>
+      </div>
     </div>
   </div>
 
   <!-- Auth Panel -->
   <div class="auth-panel">
     <div class="auth-box">
-      <h1 style="font-size:1.5rem;font-weight:700;margin-bottom:6px;">Staff Sign In</h1>
-      <p style="color:var(--text-secondary);font-size:0.88rem;margin-bottom:24px;">Sign in to your admin account.</p>
+      <div style="margin-bottom: 24px;">
+        <h1 style="font-family:var(--font-display); font-size: var(--text-xl); font-weight: 800; margin-bottom: 6px; letter-spacing: -0.02em;">Portal Sign In</h1>
+        <p style="color: var(--text-secondary); font-size: var(--text-sm);">Sign in to your instructor or admin portal account.</p>
+      </div>
 
       {% if error %}
-      <div class="alert alert-error" data-auto-dismiss="5000">
-        ⚠ {{ error }}
+      <div class="alert alert-error" style="margin-bottom: 20px;" data-auto-dismiss="5000">
+        {{ icon('alert') }} {{ error }}
       </div>
       {% endif %}
       {% if success %}
-      <div class="alert alert-success" data-auto-dismiss="5000">
-        ✓ {{ success }}
+      <div class="alert alert-success" style="margin-bottom: 20px;" data-auto-dismiss="5000">
+        {{ icon('check') }} {{ success }}
       </div>
       {% endif %}
 
       <!-- Login Form -->
-      <div class="auth-form-panel" style="display: flex; flex-direction: column;">
-        <form action="/login" method="post" class="auth-form">
-          <div class="form-group">
-            <label class="form-label" for="login-email">Email address</label>
-            <input id="login-email" class="form-control" type="email" name="email" placeholder="admin@example.com" required autocomplete="email">
+      <form action="/login" method="post" class="auth-form" style="display: flex; flex-direction: column; gap: 16px;">
+        <div class="form-group" style="margin-bottom: 0;">
+          <label class="form-label" for="login-email">Instructor / Admin Email</label>
+          <input id="login-email" class="form-control" type="email" name="email" placeholder="name@institution.edu" required autocomplete="email">
+        </div>
+
+        <div class="form-group" style="margin-bottom: 0;">
+          <label class="form-label" for="login-password">Password</label>
+          <div style="position: relative;">
+            <input id="login-password" class="form-control" type="password" name="password" placeholder="••••••••" required autocomplete="current-password" minlength="6" style="padding-right: 75px;">
+            <button type="button" class="btn btn-ghost btn-sm" onclick="togglePasswordVisibility('login-password', this)" style="position: absolute; right: 6px; top: 50%; transform: translateY(-50%); font-size: var(--text-xs); padding: 4px 8px; color: var(--text-muted);">
+              {{ icon('eye', size="14px") }} Show
+            </button>
           </div>
-          <div class="form-group">
-            <label class="form-label" for="login-password">Password</label>
-            <div style="position:relative;">
-              <input id="login-password" class="form-control" type="password" name="password" placeholder="••••••••" required autocomplete="current-password" minlength="6" style="padding-right:65px;">
-              <button type="button" class="btn btn-ghost btn-sm" onclick="togglePasswordVisibility('login-password', this)" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);font-size:0.75rem;padding:4px 8px;color:var(--text-secondary);">
-                👁 Show
-              </button>
-            </div>
-          </div>
-          <button type="submit" class="btn btn-primary w-full" style="margin-top:6px;padding:10px">
-            Sign In →
-          </button>
-        </form>
+        </div>
+
+        <button type="submit" class="btn btn-primary w-full" style="padding: 11px; font-weight: 700; margin-top: 6px;">
+          Sign In to Portal
+        </button>
+      </form>
+
+      <!-- Divider -->
+      <div style="display: flex; align-items: center; gap: 14px; margin: 24px 0 20px 0;">
+        <div style="flex: 1; height: 1px; background: var(--border);"></div>
+        <span style="font-size: var(--text-2xs); color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.08em; font-weight: 700;">or</span>
+        <div style="flex: 1; height: 1px; background: var(--border);"></div>
       </div>
 
+      <!-- Continue as Guest Action -->
+      <a href="/leaderboard" class="btn btn-secondary w-full" style="padding: 10px; font-weight: 600; text-decoration: none;">
+        {{ icon('trophy') }} Continue as Guest
+      </a>
+
+      <!-- Footer Help -->
+      <div style="margin-top: 24px; text-align: center; font-size: var(--text-xs); color: var(--text-muted);">
+        Student? Ask your instructor for the class invite link.
+      </div>
     </div>
   </div>
 </div>
 
-<script src="/static/js/app.js"></script>
+<script src="/static/js/app.js?v=4"></script>
 </body>
 </html>

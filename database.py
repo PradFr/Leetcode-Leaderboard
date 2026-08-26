@@ -48,6 +48,26 @@ class Profile(Base):
     leetcode_username = Column(String, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
+    assignments = relationship("StaffAssignment", back_populates="profile", cascade="all, delete-orphan")
+
+
+# -----------------------------------------------------------------------------
+# Staff Assignments (Role-Based Permissions for Classes/Categories)
+# -----------------------------------------------------------------------------
+class StaffAssignment(Base):
+    __tablename__ = "staff_assignments"
+    __table_args__ = {"schema": "public"}
+
+    id = Column(String, primary_key=True, default=lambda: uuid.uuid4().hex)
+    profile_id = Column(UUID(as_uuid=True), ForeignKey("public.profiles.id", ondelete="CASCADE"), nullable=False)
+    class_id = Column(String, ForeignKey("public.classes.id", ondelete="CASCADE"), nullable=True)
+    category_id = Column(String, ForeignKey("public.categories.id", ondelete="CASCADE"), nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    profile = relationship("Profile", back_populates="assignments")
+    cls = relationship("Class")
+    category = relationship("Category")
+
 
 # -----------------------------------------------------------------------------
 # Categories
@@ -122,6 +142,7 @@ class Student(Base):
     solved_total = Column(Integer, default=0)
     points = Column(Integer, default=0)
     ranking = Column(Integer, default=0)
+    last_active = Column(DateTime(timezone=True), server_default=func.now(), default=func.now())
     last_updated = Column(DateTime(timezone=True), server_default=func.now())
     joined_at = Column(DateTime(timezone=True), server_default=func.now())
     email = Column(String, nullable=True)
@@ -152,23 +173,60 @@ class TestResult(Base):
     cls = relationship("Class")
 
 
+# -----------------------------------------------------------------------------
+# Audit Logs
+# -----------------------------------------------------------------------------
+class AuditLog(Base):
+    __tablename__ = "audit_logs"
+    __table_args__ = {"schema": "public"}
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    actor_id = Column(String, nullable=True)
+    actor_email = Column(String, nullable=True)
+    actor_name = Column(String, nullable=True)
+    action_type = Column(String, nullable=False)  # class_created, student_added, staff_assigned, etc.
+    target_type = Column(String, nullable=True)  # class, category, student, staff, test, invite
+    target_id = Column(String, nullable=True)
+    description = Column(Text, nullable=False)
+    ip_address = Column(String, nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+
+# -----------------------------------------------------------------------------
+# Refresh Logs (Auto-Refresh Execution Tracking)
+# -----------------------------------------------------------------------------
+class RefreshLog(Base):
+    __tablename__ = "refresh_logs"
+    __table_args__ = {"schema": "public"}
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    timestamp = Column(DateTime(timezone=True), server_default=func.now())
+    status = Column(String, default="completed")  # completed, partial, failed
+    total_students = Column(Integer, default=0)
+    success_count = Column(Integer, default=0)
+    failure_count = Column(Integer, default=0)
+    duration_seconds = Column(Integer, default=0)
+    error_details = Column(JSONB, nullable=True)
+    triggered_by = Column(String, default="scheduled")  # scheduled, manual: admin@college.edu
+
+
 from sqlalchemy import text
 
 def ensure_tables():
     """Create tables if they don't exist and patch legacy schemas"""
     Base.metadata.create_all(engine)
-    try:
-        with engine.connect() as conn:
-            conn.execute(text("ALTER TABLE public.students ALTER COLUMN user_id DROP NOT NULL;"))
-            try:
-                conn.execute(text("ALTER TABLE public.students ADD COLUMN register_number VARCHAR;"))
-            except Exception:
-                pass # Already exists
-            try:
-                conn.execute(text("ALTER TABLE public.classes ADD COLUMN category_id VARCHAR(32) REFERENCES public.categories(id) ON DELETE CASCADE;"))
-            except Exception:
-                pass # Already exists
-            conn.commit()
-    except Exception as e:
-        print(f"Migration error (ignoring): {e}")
+    statements = [
+        "ALTER TABLE public.students ALTER COLUMN user_id DROP NOT NULL;",
+        "ALTER TABLE public.students ADD COLUMN IF NOT EXISTS register_number VARCHAR;",
+        "ALTER TABLE public.classes ADD COLUMN IF NOT EXISTS category_id VARCHAR(32) REFERENCES public.categories(id) ON DELETE CASCADE;",
+        "ALTER TABLE public.students ADD COLUMN IF NOT EXISTS last_active TIMESTAMP WITH TIME ZONE DEFAULT NOW();",
+        "UPDATE public.students SET last_active = COALESCE(last_updated, joined_at, NOW()) WHERE last_active IS NULL;",
+    ]
+    for stmt in statements:
+        try:
+            with engine.begin() as conn:
+                conn.execute(text(stmt))
+        except Exception as e:
+            # Ignore expected benign errors (e.g. constraints or columns already existing)
+            pass
     print("Schema ready.")

@@ -1,92 +1,111 @@
 {% extends "base.html" %}
+{% from "components/icons.html" import icon %}
 
-{% block title %}Admin Dashboard — LeetCode Leaderboard{% endblock %}
-{% block page_title %}Dashboard{% endblock %}
+{% block title %}Admin Dashboard — KAHE Placement Cell{% endblock %}
+{% block page_title %}Dashboard Overview{% endblock %}
 
 {% block topbar_actions %}
-  <a href="/admin/classes" class="btn btn-primary btn-sm">+ New Class</a>
+  <a href="/admin/classes" class="btn btn-primary btn-sm">
+    {{ icon('plus', size="14px") }} New Class
+  </a>
 {% endblock %}
 
 {% block content %}
 
 <!-- Stats Row -->
 <div class="stats-grid">
-  <div class="stat-card">
-    <div class="stat-icon orange">📦</div>
-    <div>
-      <div class="stat-value">{{ total_classes }}</div>
-      <div class="stat-label">Total Classes</div>
+  <div class="stat-card stat-card-glow">
+    <div class="stat-header">
+      <span class="stat-lbl">Total Classes</span>
+      <div class="stat-icon" style="background:var(--accent-dim); color:var(--accent);">
+        {{ icon('classes') }}
+      </div>
     </div>
+    <div class="stat-val" data-counter="{{ total_classes }}">{{ total_classes }}</div>
   </div>
-  <div class="stat-card">
-    <div class="stat-icon blue">👥</div>
-    <div>
-      <div class="stat-value">{{ total_students }}</div>
-      <div class="stat-label">Students</div>
+
+  <div class="stat-card stat-card-glow">
+    <div class="stat-header">
+      <span class="stat-lbl">Total Students</span>
+      <div class="stat-icon" style="background:var(--blue-dim); color:var(--blue);">
+        {{ icon('users') }}
+      </div>
     </div>
+    <div class="stat-val" data-counter="{{ total_students }}">{{ total_students }}</div>
   </div>
-  <div class="stat-card">
-    <div class="stat-icon purple">👤</div>
-    <div>
-      <div class="stat-value">{{ total_admins }}</div>
-      <div class="stat-label">Staff / Admins</div>
+
+  <div class="stat-card stat-card-glow">
+    <div class="stat-header">
+      <span class="stat-lbl">Staff & Instructors</span>
+      <div class="stat-icon" style="background:var(--purple-dim); color:var(--purple);">
+        {{ icon('shield') }}
+      </div>
     </div>
+    <div class="stat-val" data-counter="{{ total_admins }}">{{ total_admins }}</div>
   </div>
 </div>
 
 <!-- Two-column layout -->
-<div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:start">
+<div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(320px, 1fr)); gap:24px; align-items:start;">
 
   <!-- Recent Classes -->
   <div class="card">
-    <div class="flex items-center justify-between mb-4">
-      <h2 style="font-size:0.95rem;font-weight:600;">Recent Classes</h2>
+    <div class="card-header">
+      <h2 class="section-title">Recent Classes</h2>
       <a href="/admin/classes" class="btn btn-ghost btn-sm">View all →</a>
     </div>
     {% if recent_classes %}
-    <div style="display:flex;flex-direction:column;gap:10px;">
+    <div style="display:flex; flex-direction:column; gap:10px;">
       {% for item in recent_classes %}
-      <a href="/admin/classes/{{ item.cls.id }}" style="display:flex;align-items:center;gap:12px;padding:10px;border-radius:var(--r-sm);border:1px solid var(--border-muted);text-decoration:none;color:inherit;transition:border-color var(--t-fast),background var(--t-fast);" onmouseover="this.style.borderColor='var(--border)';this.style.background='var(--bg-overlay)'" onmouseout="this.style.borderColor='var(--border-muted)';this.style.background=''">
-        <div class="class-icon" style="width:34px;height:34px;font-size:0.9rem;">📦</div>
-        <div style="flex:1;min-width:0">
-          <div style="font-size:0.88rem;font-weight:600;color:var(--text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ item.cls.name }}</div>
-          <div style="font-size:0.76rem;color:var(--text-muted)">{{ item.student_count }} student{{ 's' if item.student_count != 1 }}</div>
+      <a href="/admin/classes/{{ item.cls.id }}" class="card" style="display:flex; align-items:center; gap:14px; padding:14px 16px; border-radius:var(--r-sm); border:1px solid var(--border-muted); text-decoration:none; color:inherit;">
+        <div class="stat-icon" style="width:36px; height:36px; background:var(--bg-overlay); color:var(--accent);">
+          {{ icon('classes', size="18px") }}
         </div>
-        <span style="font-size:0.72rem;color:var(--text-muted)">→</span>
+        <div style="flex:1; min-width:0;">
+          <div style="font-size:var(--text-sm); font-weight:700; color:var(--text-primary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ item.cls.name }}</div>
+          <div style="font-size:var(--text-xs); color:var(--text-muted);">{{ item.student_count }} student{{ 's' if item.student_count != 1 }}</div>
+        </div>
+        <span style="font-size:var(--text-xs); color:var(--text-muted); font-weight:700;">→</span>
       </a>
       {% endfor %}
     </div>
     {% else %}
-    <div class="empty-state" style="padding:30px 0">
-      <div class="empty-icon">📂</div>
-      <h3>No classes yet</h3>
-      <p>Create your first class to get started.</p>
-      <a href="/admin/classes" class="btn btn-primary btn-sm">+ Create Class</a>
+    <div class="empty-state">
+      <div class="empty-icon-wrap">
+        {{ icon('classes', size="24px") }}
+      </div>
+      <h3 style="font-family:var(--font-display); font-size:var(--text-md); font-weight:700;">No classes yet</h3>
+      <p style="color:var(--text-secondary); font-size:var(--text-xs);">Create your first class cohort to start monitoring student practice.</p>
+      <a href="/admin/classes" class="btn btn-primary btn-sm" style="margin-top:8px;">
+        {{ icon('plus', size="14px") }} Create Class
+      </a>
     </div>
     {% endif %}
   </div>
 
-  <!-- Quick Actions -->
-  <div style="display:flex;flex-direction:column;gap:16px;">
+  <!-- Quick Actions & Guidelines -->
+  <div style="display:flex; flex-direction:column; gap:20px;">
     <div class="card">
-      <h2 style="font-size:0.95rem;font-weight:600;margin-bottom:16px;">Quick Actions</h2>
-      <div style="display:flex;flex-direction:column;gap:8px;">
-        <a href="/admin/classes" class="btn btn-secondary w-full" style="justify-content:flex-start">
-          <span>➕</span> Create New Class
+      <h2 class="section-title" style="margin-bottom:16px;">Quick Actions</h2>
+      <div style="display:flex; flex-direction:column; gap:10px;">
+        <a href="/admin/classes" class="btn btn-secondary w-full" style="justify-content:flex-start;">
+          {{ icon('plus') }} Create New Class
         </a>
-        <a href="/admin/classes" class="btn btn-secondary w-full" style="justify-content:flex-start">
-          <span>📚</span> Manage Classes
+        <a href="/admin/classes" class="btn btn-secondary w-full" style="justify-content:flex-start;">
+          {{ icon('classes') }} Manage Classes
         </a>
-        <a href="/admin/staff" class="btn btn-secondary w-full" style="justify-content:flex-start">
-          <span>👤</span> Manage Staff & Admins
+        <a href="/admin/staff" class="btn btn-secondary w-full" style="justify-content:flex-start;">
+          {{ icon('users') }} Manage Staff & Admins
         </a>
       </div>
     </div>
 
-    <div class="card" style="background:linear-gradient(135deg,rgba(255,161,22,0.06) 0%,transparent 100%)">
-      <div style="font-size:0.75rem;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:var(--accent);margin-bottom:10px;">💡 Tip</div>
-      <p style="font-size:0.82rem;color:var(--text-secondary);line-height:1.6;">
-        Share the <strong style="color:var(--text-primary)">invite link</strong> from each class page with your students. They can join instantly by providing their LeetCode Username – no account required.
+    <div class="card" style="background:var(--accent-dim); border-color:rgba(16,185,129,0.25);">
+      <div class="meta-label" style="color:var(--accent); margin-bottom:8px; display:flex; align-items:center; gap:6px;">
+        {{ icon('info', size="14px") }} Pro Tip
+      </div>
+      <p style="font-size:var(--text-xs); color:var(--text-secondary); line-height:1.6;">
+        Share the <strong style="color:var(--text-primary)">invite link</strong> from each class page with your students. They can join instantly by providing their LeetCode Username — no password or account setup required.
       </p>
     </div>
   </div>

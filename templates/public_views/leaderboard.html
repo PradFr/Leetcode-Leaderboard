@@ -1,6 +1,7 @@
 {% extends "base.html" %}
+{% from "components/icons.html" import icon %}
 
-{% block title %}Leaderboard: {{ cls.name }} — LeetCode Tracker{% endblock %}
+{% block title %}Leaderboard: {{ cls.name }} — KAHE Placement Cell{% endblock %}
 {% block page_title %}{{ cls.name }} Leaderboard{% endblock %}
 
 {% block content %}
@@ -8,87 +9,117 @@
   
   {% if request.query_params.get("success") %}
   <div class="alert alert-success" style="margin-bottom: 24px;">
-    ✓ {{ request.query_params.get("success") }}
+    {{ icon('check') }} {{ request.query_params.get("success") }}
   </div>
   {% endif %}
 
   <div class="card" style="padding: 0; overflow: hidden;">
     {% if not leaderboard %}
-      <div style="text-align: center; padding: 40px; color: var(--text-secondary);">
-        <div style="font-size: 3rem; margin-bottom: 16px;">😔</div>
-        <h3>No students yet!</h3>
-        <p>This class leaderboard is currently empty.</p>
+      <div class="empty-state" style="padding: 56px 20px;">
+        <div class="empty-icon-wrap">
+          {{ icon('trophy', size="28px") }}
+        </div>
+        <h3 style="font-family:var(--font-display); font-size:var(--text-lg); font-weight:700;">No students enrolled yet</h3>
+        <p style="color:var(--text-secondary); font-size:var(--text-xs);">This class cohort leaderboard is currently empty.</p>
       </div>
     {% else %}
       <div class="leaderboard-toolbar">
         <div class="leaderboard-toolbar-left">
-          <h3 style="margin: 0; font-size: 1.05rem; color: var(--text-primary);">Leaderboard</h3>
+          <h3 class="section-title" style="margin: 0; font-size: var(--text-md);">Class Leaderboard</h3>
           <div class="search-box-wrap">
-            <span class="search-box-icon">🔍</span>
-            <input type="text" id="leaderboard-search" class="search-box-input" placeholder="Search name, reg no, username...">
-            <button type="button" id="search-clear-btn" class="search-box-clear" title="Clear search">✕</button>
+            <span class="search-box-icon">{{ icon('search', size="14px") }}</span>
+            <input type="text" id="leaderboard-search" class="search-box-input" placeholder="Search student name, reg no, username...">
+            <button type="button" id="search-clear-btn" class="search-box-clear" title="Clear search">{{ icon('x', size="13px") }}</button>
           </div>
-          <select id="sort-dropdown" class="form-control" style="width:auto;padding:5px 8px;font-size:0.8rem;background:var(--bg-overlay)">
+          <select id="sort-dropdown" class="form-control" style="width:auto; padding:6px 28px 6px 12px; font-size:var(--text-xs); background:var(--bg-overlay);">
             <option value="points">Sort by: Points</option>
             <option value="total">Sort by: Total Solved</option>
             <option value="easy">Sort by: Easy</option>
             <option value="med">Sort by: Medium</option>
             <option value="hard">Sort by: Hard</option>
             <option value="rank">Sort by: LC Rank</option>
+            <option value="reg">Sort by: Register Number</option>
+            <option value="name">Sort by: Name</option>
           </select>
         </div>
         <div class="leaderboard-toolbar-right">
           {% if user and user.role in ['admin', 'superadmin'] %}
-          <button type="button" class="btn btn-secondary btn-sm" data-open-modal="modal-export" style="display:flex;align-items:center;gap:6px">
-            <span>📥</span> Export
+          <button type="button" class="btn btn-secondary btn-sm" data-open-modal="modal-export">
+            {{ icon('download', size="14px") }} Export
           </button>
           {% endif %}
           <div style="display:flex; align-items:center; gap:8px;">
-            <span style="font-size:0.8rem; color:var(--text-secondary)">Name</span>
-            <label class="theme-switch" for="display-toggle-public">
+            <span style="font-size:var(--text-xs); color:var(--text-muted); font-weight:600;">Name</span>
+            <label class="theme-switch" for="display-toggle-public" title="Toggle Register Number">
               <input type="checkbox" id="display-toggle-public" onchange="document.body.classList.toggle('show-reg-nums', this.checked)">
-              <span class="slider round"></span>
+              <span class="slider"></span>
             </label>
-            <span style="font-size:0.8rem; color:var(--text-secondary)">Reg No.</span>
+            <span style="font-size:var(--text-xs); color:var(--text-muted); font-weight:600;">Reg No.</span>
           </div>
         </div>
       </div>
+
       <div class="table-wrap" style="border:none; border-radius:0;">
-        <table data-leaderboard-table data-sortable style="width: 100%; border-collapse: collapse; text-align: left;">
+        <table data-leaderboard-table data-sortable>
           <thead>
-            <tr style="border-bottom: 1px solid var(--border);">
-              <th style="padding: 12px 16px; color: var(--text-secondary); width: 60px;">Rank</th>
-              <th style="padding: 12px 16px; color: var(--text-secondary);">Student</th>
-              <th style="padding: 12px 16px; color: var(--text-secondary);">
+            <tr>
+              <th style="width: 54px;">Rank</th>
+              <th>Student</th>
+              <th class="num-col" data-sort="points">
                 Points
-                <button type="button" class="btn-info-icon" data-open-modal="modal-points-info" title="How points are calculated">ℹ</button>
+                <button type="button" class="btn-ghost" data-open-modal="modal-points-info" title="Points Calculation Info" style="padding:0; vertical-align:middle; color:var(--text-muted);">
+                  {{ icon('info', size="13px") }}
+                </button>
               </th>
-              <th style="padding: 12px 16px; color: var(--text-secondary);">Total Solved</th>
-              <th style="padding: 12px 16px; color: var(--easy);">Easy</th>
-              <th style="padding: 12px 16px; color: var(--medium);">Medium</th>
-              <th style="padding: 12px 16px; color: var(--hard);">Hard</th>
+              <th class="num-col" data-sort="total">Total Solved</th>
+              <th class="num-col" data-sort="easy" style="color: var(--easy);">Easy</th>
+              <th class="num-col" data-sort="med" style="color: var(--medium);">Medium</th>
+              <th class="num-col" data-sort="hard" style="color: var(--hard);">Hard</th>
             </tr>
           </thead>
           <tbody>
             {% for s in leaderboard %}
-            <tr data-student-row data-points="{{ s.points or 0 }}" data-total="{{ s.solved_total or 0 }}" data-easy="{{ s.solved_easy or 0 }}" data-med="{{ s.solved_medium or 0 }}" data-hard="{{ s.solved_hard or 0 }}" data-rank="{{ s.ranking or 0 }}" data-lc-user="{{ s.leetcode_username or '' }}" style="border-bottom: 1px solid var(--border);">
-              <td style="padding: 14px 16px; font-weight: bold; font-size: 1.05rem; color: var(--text-primary);">
-                <span class="rank-badge rank-{{ s._rank if s._rank <= 3 else 'n' }}">#{{ s._rank }}</span>
+            <tr data-student-row 
+                data-points="{{ s.points or 0 }}" 
+                data-total="{{ s.solved_total or 0 }}" 
+                data-easy="{{ s.solved_easy or 0 }}" 
+                data-med="{{ s.solved_medium or 0 }}" 
+                data-hard="{{ s.solved_hard or 0 }}" 
+                data-rank="{{ s.ranking or 0 }}" 
+                data-lc-user="{{ s.leetcode_username or '' }}"
+                data-reg="{{ s.register_number or '' }}"
+                data-name="{{ s.display_name or '' }}">
+              <td>
+                <span class="rank-badge rank-{{ s._rank if s._rank <= 3 else 'n' }}">{{ s._rank }}</span>
               </td>
-              <td style="padding: 14px 16px;">
-                <div style="font-weight: 600;">
+              <td>
+                <div style="font-weight: 700; color:var(--text-primary);">
                   <span class="display-name-text">{{ s.display_name }}</span>
                   <span class="display-reg-text" style="display: none;">{{ s.register_number or 'N/A' }}</span>
                 </div>
-                <div style="font-size: 0.8rem; color: var(--text-secondary);" data-leetcode-user>@{{ s.leetcode_username }}</div>
+                <div style="font-size: var(--text-xs); color: var(--text-muted);" data-leetcode-user>
+                  <a href="https://leetcode.com/{{ s.leetcode_username }}" target="_blank" style="color:var(--accent); text-decoration:none; display:inline-flex; align-items:center; gap:3px;">
+                    @{{ s.leetcode_username }}
+                    {{ icon('external', size="11px") }}
+                  </a>
+                </div>
               </td>
-              <td style="padding: 14px 16px; font-weight: bold; color: var(--accent);" data-col="points">
-                {{ s.points }}
+              <td class="num-col" data-col="points">
+                <span class="points-pill">{{ s.points or 0 }} pts</span>
               </td>
-              <td style="padding: 14px 16px;" data-col="total">{{ s.solved_total }}</td>
-              <td style="padding: 14px 16px; color: var(--easy);" data-col="easy">{{ s.solved_easy }}</td>
-              <td style="padding: 14px 16px; color: var(--medium);" data-col="med">{{ s.solved_medium }}</td>
-              <td style="padding: 14px 16px; color: var(--hard);" data-col="hard">{{ s.solved_hard }}</td>
+              <td class="num-col" data-col="total">
+                <strong style="color:var(--text-primary);">{{ s.solved_total or 0 }}</strong>
+                {% if (s.solved_total or 0) > 0 %}
+                <div class="ratio-bar-wrap" title="Easy: {{ s.solved_easy or 0 }} | Med: {{ s.solved_medium or 0 }} | Hard: {{ s.solved_hard or 0 }}" style="margin-left:auto;">
+                  <div class="ratio-seg seg-easy" style="width: {{ ((s.solved_easy or 0) / (s.solved_total or 1) * 100) | round(1) }}%;"></div>
+                  <div class="ratio-seg seg-med" style="width: {{ ((s.solved_medium or 0) / (s.solved_total or 1) * 100) | round(1) }}%;"></div>
+                  <div class="ratio-seg seg-hard" style="width: {{ ((s.solved_hard or 0) / (s.solved_total or 1) * 100) | round(1) }}%;"></div>
+                </div>
+                {% endif %}
+              </td>
+              <td class="num-col" data-col="easy" style="color: var(--easy);">{{ s.solved_easy or 0 }}</td>
+              <td class="num-col" data-col="med" style="color: var(--medium);">{{ s.solved_medium or 0 }}</td>
+              <td class="num-col" data-col="hard" style="color: var(--hard);">{{ s.solved_hard or 0 }}</td>
             </tr>
             {% endfor %}
           </tbody>
@@ -100,42 +131,40 @@
 {% if user and user.role in ['admin', 'superadmin'] %}
 <!-- Admin Export Modal -->
 <div class="modal-backdrop" id="modal-export">
-  <div class="modal" style="max-width: 460px; text-align: left; padding: 24px;">
-    <div class="modal-header" style="margin-bottom: 16px;">
+  <div class="modal" style="max-width: 480px; text-align: left; padding: 24px;">
+    <div class="modal-header">
       <h3 class="modal-title" style="display:flex; align-items:center; gap:8px;">
-        <span>📥</span> Export Leaderboard Data
+        {{ icon('download') }} Export Leaderboard
       </h3>
-      <button class="modal-close" data-close-modal="modal-export">✕</button>
+      <button class="modal-close" data-close-modal="modal-export" title="Close">{{ icon('x') }}</button>
     </div>
 
-    <p style="color:var(--text-secondary); font-size:0.85rem; margin-bottom: 16px;">
-      Export student records matching the current active sort order into a structured file format.
+    <p style="color:var(--text-secondary); font-size:var(--text-xs); margin-bottom: 18px;">
+      Export student records matching the active sorting order into a formatted file.
     </p>
 
     <!-- Range Selector -->
     <div style="margin-bottom: 20px;">
-      <label style="font-size:0.85rem; font-weight:600; color:var(--text-primary); display:block; margin-bottom:8px;">
-        Selection Range
-      </label>
+      <label class="form-label">Selection Range</label>
       <div style="display:flex; gap:16px; align-items:center; margin-bottom:10px;">
-        <label style="display:flex; align-items:center; gap:6px; font-size:0.85rem; cursor:pointer;">
+        <label style="display:flex; align-items:center; gap:6px; font-size:var(--text-xs); cursor:pointer;">
           <input type="radio" name="export-range-type" id="export-range-all" value="all" checked>
-          <span>Whole List (<span id="export-total-count-text">{{ leaderboard|length }}</span> students)</span>
+          <span>All Students (<span id="export-total-count-text">{{ leaderboard|length }}</span>)</span>
         </label>
-        <label style="display:flex; align-items:center; gap:6px; font-size:0.85rem; cursor:pointer;">
+        <label style="display:flex; align-items:center; gap:6px; font-size:var(--text-xs); cursor:pointer;">
           <input type="radio" name="export-range-type" id="export-range-custom" value="custom">
           <span>Custom Positions</span>
         </label>
       </div>
 
-      <div id="export-range-inputs-box" class="export-range-inputs" style="display:none;">
+      <div id="export-range-inputs-box" class="export-range-inputs" style="display:none; gap:10px; align-items:center;">
         <div style="flex:1;">
-          <span style="font-size:0.75rem; color:var(--text-secondary);">From Position</span>
+          <span style="font-size:var(--text-2xs); color:var(--text-muted); font-weight:700;">From Position</span>
           <input type="number" id="export-from-pos" class="form-control" value="1" min="1" max="{{ leaderboard|length }}">
         </div>
-        <div style="align-self:flex-end; padding-bottom:8px; color:var(--text-muted); font-weight:bold;">to</div>
+        <div style="padding-top:14px; color:var(--text-muted); font-weight:bold;">to</div>
         <div style="flex:1;">
-          <span style="font-size:0.75rem; color:var(--text-secondary);">To Position</span>
+          <span style="font-size:var(--text-2xs); color:var(--text-muted); font-weight:700;">To Position</span>
           <input type="number" id="export-to-pos" class="form-control" value="{{ leaderboard|length }}" min="1" max="{{ leaderboard|length }}">
         </div>
       </div>
@@ -143,45 +172,42 @@
 
     <!-- Export Format Selector -->
     <div style="margin-bottom: 20px;">
-      <label style="font-size:0.85rem; font-weight:600; color:var(--text-primary); display:block; margin-bottom:8px;">
-        File Format
-      </label>
-      <div class="export-format-grid">
-        <div class="export-format-card selected" data-format="xlsx">
-          <input type="radio" name="export-format" value="xlsx" checked>
-          <div style="font-size:1.4rem;">📊</div>
-          <div style="font-size:0.82rem; margin-top:2px;">Excel (.xlsx)</div>
-        </div>
-        <div class="export-format-card" data-format="csv">
-          <input type="radio" name="export-format" value="csv">
-          <div style="font-size:1.4rem;">📄</div>
-          <div style="font-size:0.82rem; margin-top:2px;">CSV (.csv)</div>
-        </div>
-        <div class="export-format-card" data-format="json">
-          <input type="radio" name="export-format" value="json">
-          <div style="font-size:1.4rem;">📋</div>
-          <div style="font-size:0.82rem; margin-top:2px;">JSON (.json)</div>
-        </div>
+      <label class="form-label">File Format</label>
+      <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:10px;">
+        <label class="card" style="padding:12px; text-align:center; cursor:pointer; border-color:var(--accent); display:flex; flex-direction:column; align-items:center; gap:6px;">
+          <input type="radio" name="export-format" value="xlsx" checked style="display:none;">
+          {{ icon('file-text', size="22px") }}
+          <span style="font-size:var(--text-xs); font-weight:700;">Excel (.xlsx)</span>
+        </label>
+        <label class="card" style="padding:12px; text-align:center; cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:6px;">
+          <input type="radio" name="export-format" value="csv" style="display:none;">
+          {{ icon('file-text', size="22px") }}
+          <span style="font-size:var(--text-xs); font-weight:700;">CSV (.csv)</span>
+        </label>
+        <label class="card" style="padding:12px; text-align:center; cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:6px;">
+          <input type="radio" name="export-format" value="json" style="display:none;">
+          {{ icon('file-text', size="22px") }}
+          <span style="font-size:var(--text-xs); font-weight:700;">JSON (.json)</span>
+        </label>
       </div>
     </div>
 
     <!-- Error validation container -->
-    <div id="export-error-alert" class="validation-error-alert">
-      <span>⚠</span>
+    <div id="export-error-alert" class="alert alert-error" style="display:none;">
+      {{ icon('alert') }}
       <span id="export-error-message">Invalid position selection</span>
     </div>
 
     <!-- Modal Footer Actions -->
-    <div style="display:flex; gap:12px; justify-content:flex-end; margin-top:20px;">
+    <div style="display:flex; gap:10px; justify-content:flex-end; margin-top:20px;">
       <button type="button" class="btn btn-secondary" data-close-modal="modal-export">Cancel</button>
-      <button type="button" class="btn btn-primary" id="export-submit-btn" style="display:flex; align-items:center; gap:6px;">
-        <span>📥</span> Download File
+      <button type="button" class="btn btn-primary" id="export-submit-btn">
+        {{ icon('download', size="14px") }} Download File
       </button>
     </div>
   </div>
 </div>
 {% endif %}
-
 
 </div>
 {% endblock %}

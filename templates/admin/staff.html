@@ -1,97 +1,259 @@
 {% extends "base.html" %}
+{% from "components/icons.html" import icon %}
 
-{% block title %}Manage Staff — LeetCode Leaderboard{% endblock %}
-{% block page_title %}Staff & Admins{% endblock %}
+{% block title %}Manage Staff & Permissions — KAHE Placement Cell{% endblock %}
+{% block page_title %}Staff & Instructor Management{% endblock %}
 
 {% block content %}
 <div class="content-wrapper">
   
   {% if request.query_params.get("error") %}
   <div class="alert alert-error" style="margin-bottom: 24px;">
-    ⚠ {{ request.query_params.get("error") }}
+    {{ icon('alert') }} {{ request.query_params.get("error") }}
   </div>
   {% endif %}
   {% if request.query_params.get("success") %}
   <div class="alert alert-success" style="margin-bottom: 24px;">
-    ✓ {{ request.query_params.get("success") }}
+    {{ icon('check') }} {{ request.query_params.get("success") }}
   </div>
   {% endif %}
 
-  <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 24px;">
-    <!-- Staff List -->
-    <div class="card" style="padding: 24px;">
-      <h3 style="margin-bottom: 16px;">Active Staff</h3>
-      <table class="table" style="width: 100%; border-collapse: collapse; text-align: left;">
-        <thead>
-          <tr style="border-bottom: 1px solid var(--border);">
-            <th style="padding: 8px 0; color: var(--text-secondary);">Name</th>
-            <th style="padding: 8px 0; color: var(--text-secondary);">Email</th>
-            <th style="padding: 8px 0; color: var(--text-secondary);">Role</th>
-            <th style="padding: 8px 0; color: var(--text-secondary); text-align: right;">Action</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for p in profiles %}
-          <tr style="border-bottom: 1px solid var(--border);">
-            <td style="padding: 12px 0;"><strong>{{ p.full_name or '-' }}</strong></td>
-            <td style="padding: 12px 0; color: var(--text-secondary);">{{ p.email }}</td>
-            <td style="padding: 12px 0;">
-              {% if p.role == 'superadmin' %}
-              <span style="background: rgba(255, 161, 22, 0.15); color: var(--accent); padding: 2px 8px; border-radius: 4px; font-size: 0.8rem; border: 1px solid rgba(255, 161, 22, 0.4); font-weight: 600;">
-                👑 Super Admin
-              </span>
-              {% else %}
-              <span style="background: var(--bg-surface); padding: 2px 8px; border-radius: 4px; font-size: 0.8rem; border: 1px solid var(--border);">
-                {{ p.role | capitalize }}
-              </span>
-              {% endif %}
-            </td>
-            <td style="padding: 12px 0; text-align: right;">
-              {% if p.role == 'superadmin' %}
-                <span style="font-size:0.78rem; color:var(--accent); font-weight:600;">Protected</span>
-              {% elif user and (p.id|string) != user.id %}
-                <form action="/admin/staff/delete/{{ p.id }}" method="post" style="display:inline;" data-confirm="Are you sure you want to remove admin access for {{ p.email }}?" data-confirm-ok="Remove" data-confirm-class="btn-danger">
-                  <button type="submit" class="btn btn-ghost btn-sm" style="color:var(--red);">Remove</button>
-                </form>
-              {% else %}
-                <span style="font-size:0.78rem; color:var(--text-muted);">(You)</span>
-              {% endif %}
-            </td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 24px; align-items: start;">
+    
+    <!-- Staff Members List Table -->
+    <div class="card" style="padding: 24px; grid-column: span 2;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 20px;">
+        <div>
+          <h2 class="section-title" style="margin:0 0 4px 0;">Institute Staff &amp; Faculty</h2>
+          <p style="color:var(--text-secondary); font-size:var(--text-xs); margin:0;">
+            Manage staff roles and assign access to specific academic classes or categories.
+          </p>
+        </div>
+      </div>
+
+      <div class="table-wrap" style="border:none; border-radius:0;">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Staff Member</th>
+              <th>Role</th>
+              <th>Assigned Scope</th>
+              <th style="text-align: right;">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for item in staff_data %}
+            {% set p = item.profile %}
+            <tr>
+              <td>
+                <div style="font-weight:700; color:var(--text-primary);">{{ p.full_name or 'Staff Member' }}</div>
+                <div style="font-size:var(--text-xs); color:var(--text-muted); font-family:var(--font-mono);">{{ p.email }}</div>
+              </td>
+              
+              <td>
+                {% if item.is_super %}
+                <span style="background: var(--accent-dim); color: var(--accent); padding: 3px 8px; border-radius: var(--r-full); font-size: var(--text-2xs); border: 1px solid rgba(16, 185, 129, 0.3); font-weight: 700; display:inline-flex; align-items:center; gap:4px;">
+                  {{ icon('shield', size="11px") }} Super Admin
+                </span>
+                {% else %}
+                <span style="background: var(--bg-overlay); color: var(--text-secondary); padding: 3px 8px; border-radius: var(--r-full); font-size: var(--text-2xs); border: 1px solid var(--border); font-weight: 600; display:inline-flex; align-items:center; gap:4px;">
+                  {{ icon('user', size="11px") }} Staff Member
+                </span>
+                {% endif %}
+              </td>
+
+              <td>
+                {% if item.is_super %}
+                  <span style="font-size:var(--text-xs); color:var(--accent); font-weight:700; display:inline-flex; align-items:center; gap:4px;">
+                    {{ icon('check', size="13px") }} All Classes &amp; Categories
+                  </span>
+                {% else %}
+                  <div style="display:flex; flex-wrap:wrap; gap:4px; max-width:280px;">
+                    {% if item.assigned_categories %}
+                      {% for cat in item.assigned_categories %}
+                        <span style="padding: 2px 6px; font-size: var(--text-2xs); border-radius: var(--r-xs); background: var(--accent-dim); color: var(--accent); font-weight: 600; display:inline-flex; align-items:center; gap:3px;">
+                          {{ icon('tag', size="10px") }} {{ cat.name }}
+                        </span>
+                      {% endfor %}
+                    {% endif %}
+
+                    {% if item.assigned_classes %}
+                      {% for c in item.assigned_classes %}
+                        <span style="padding: 2px 6px; font-size: var(--text-2xs); border-radius: var(--r-xs); background: var(--bg-overlay); color: var(--text-primary); border: 1px solid var(--border); font-weight: 600; display:inline-flex; align-items:center; gap:3px;">
+                          {{ icon('classes', size="10px") }} {{ c.name }}
+                        </span>
+                      {% endfor %}
+                    {% endif %}
+
+                    {% if not item.assigned_categories and not item.assigned_classes %}
+                      <span style="font-size:var(--text-xs); color:var(--text-muted); font-weight:500;">
+                        All Classes (General Access)
+                      </span>
+                    {% endif %}
+                  </div>
+                {% endif %}
+              </td>
+
+              <td style="text-align: right;">
+                <div style="display:inline-flex; align-items:center; gap:6px;">
+                  {% if not item.is_super %}
+                  <button type="button" class="btn btn-secondary btn-sm"
+                          onclick="openPermissionsModal('{{ p.id }}', '{{ p.full_name or p.email }}', {{ item.assigned_class_ids | tojson }}, {{ item.assigned_cat_ids | tojson }})"
+                          title="Assign Classes or Categories">
+                    {{ icon('link', size="12px") }} Access
+                  </button>
+                  {% endif %}
+
+                  {% if p.role != 'superadmin' and user and (p.id|string) != user.id %}
+                    <form action="/admin/staff/delete/{{ p.id }}" method="post" style="display:inline; margin:0;" data-confirm="Are you sure you want to remove access for {{ p.email }}?" data-confirm-ok="Remove" data-confirm-class="btn-danger">
+                      <button type="submit" class="btn btn-ghost btn-sm" style="color:var(--red);" title="Remove staff account">
+                        {{ icon('trash', size="13px") }}
+                      </button>
+                    </form>
+                  {% elif user and (p.id|string) == user.id %}
+                    <span style="font-size:var(--text-xs); color:var(--text-muted); font-weight:600;">(Current)</span>
+                  {% endif %}
+                </div>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
     </div>
 
-    <!-- Add Staff Form -->
+    <!-- Add New Staff Form -->
     <div class="card" style="padding: 24px; align-self: start;">
-      <h3 style="margin-bottom: 8px;">Add New Admin</h3>
-      <p style="color:var(--text-secondary); font-size: 0.88rem; margin-bottom: 16px;">
-        Creates a new staff account with immediate admin access.
+      <h3 class="section-title" style="margin-bottom: 4px;">Add New Staff / Admin</h3>
+      <p style="color:var(--text-secondary); font-size: var(--text-xs); margin-bottom: 18px;">
+        Provision a new faculty or admin login account.
       </p>
       
-      <form action="/admin/staff/add" method="post" style="display: flex; flex-direction: column; gap: 12px;" data-confirm="Are you sure you want to add this admin?">
-        <div class="form-group">
-          <label class="form-label">Full Name</label>
-          <input class="form-control" type="text" name="full_name" required>
+      <form action="/admin/staff/add" method="post" style="display: flex; flex-direction: column; gap: 14px;" data-confirm="Are you sure you want to create this account?">
+        <div class="form-group" style="margin:0;">
+          <label class="form-label" for="add-staff-name">Full Name *</label>
+          <input id="add-staff-name" class="form-control" type="text" name="full_name" placeholder="e.g. Dr. Jane Smith" required>
         </div>
-        <div class="form-group">
-          <label class="form-label">Email</label>
-          <input class="form-control" type="email" name="email" required>
+        
+        <div class="form-group" style="margin:0;">
+          <label class="form-label" for="add-staff-email">Email Address *</label>
+          <input id="add-staff-email" class="form-control" type="email" name="email" placeholder="faculty@college.edu" required>
         </div>
-        <div class="form-group">
-          <label class="form-label">Password</label>
+
+        <div class="form-group" style="margin:0;">
+          <label class="form-label" for="add-staff-role">Role *</label>
+          <select id="add-staff-role" class="form-control" name="role" required>
+            <option value="staff" selected>Staff Member (Scoped to assigned classes)</option>
+            <option value="superadmin">Super Admin (Full institute access)</option>
+          </select>
+        </div>
+        
+        <div class="form-group" style="margin:0;">
+          <label class="form-label" for="staff-password">Initial Password *</label>
           <div style="position:relative;">
-            <input id="staff-password" class="form-control" type="password" name="password" minlength="6" required style="padding-right:65px;">
-            <button type="button" class="btn btn-ghost btn-sm" onclick="togglePasswordVisibility('staff-password', this)" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);font-size:0.75rem;padding:4px 8px;color:var(--text-secondary);">
-              👁 Show
+            <input id="staff-password" class="form-control" type="password" name="password" minlength="6" required style="padding-right:75px;">
+            <button type="button" class="btn btn-ghost btn-sm" onclick="togglePasswordVisibility('staff-password', this)" style="position:absolute; right:6px; top:50%; transform:translateY(-50%); font-size:var(--text-xs); padding:4px 8px; color:var(--text-muted);">
+              {{ icon('eye', size="13px") }} Show
             </button>
           </div>
         </div>
-        <button class="btn btn-primary" type="submit" style="margin-top: 8px;">Add Admin</button>
+        
+        <button class="btn btn-primary w-full" type="submit" style="margin-top: 6px;">
+          {{ icon('plus', size="14px") }} Create Staff Account
+        </button>
       </form>
     </div>
+
   </div>
 
 </div>
+
+<!-- Manage Staff Permissions Modal -->
+<div class="modal-backdrop" id="modal-manage-permissions">
+  <div class="modal" style="max-width: 520px; text-align: left; padding: 24px;">
+    <div class="modal-header">
+      <div>
+        <h3 class="modal-title" style="display:flex; align-items:center; gap:8px;">
+          {{ icon('link') }} Manage Class Access Scopes
+        </h3>
+        <div id="modal-perm-staff-name" style="font-size:var(--text-xs); color:var(--text-secondary); margin-top:2px;"></div>
+      </div>
+      <button class="modal-close" data-close-modal="modal-manage-permissions" title="Close">{{ icon('x') }}</button>
+    </div>
+
+    <form id="form-manage-permissions" action="" method="post">
+      
+      <!-- Category level permissions -->
+      {% if all_categories %}
+      <div style="margin-bottom: 16px;">
+        <label class="form-label" style="margin-bottom:4px;">
+          Grant Entire Department / Category Access
+        </label>
+        <p style="font-size:var(--text-2xs); color:var(--text-muted); margin-bottom:8px;">
+          Grants access to all current and future classes in that category.
+        </p>
+        <div style="max-height: 120px; overflow-y:auto; border:1px solid var(--border); border-radius:var(--r-sm); padding:8px 12px; background:var(--bg-overlay);">
+          {% for cat in all_categories %}
+          <label style="display:flex; align-items:center; gap:8px; padding:4px 0; font-size:var(--text-xs); cursor:pointer;">
+            <input type="checkbox" name="category_ids" value="{{ cat.id }}" class="perm-cat-check">
+            <span style="font-weight:600;">{{ cat.name }}</span>
+          </label>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- Specific Class level permissions -->
+      <div style="margin-bottom: 20px;">
+        <label class="form-label" style="margin-bottom:4px;">
+          Specific Class Access
+        </label>
+        <div style="max-height: 160px; overflow-y:auto; border:1px solid var(--border); border-radius:var(--r-sm); padding:8px 12px; background:var(--bg-overlay);">
+          {% if all_classes %}
+            {% for c in all_classes %}
+            <label style="display:flex; align-items:center; gap:8px; padding:4px 0; font-size:var(--text-xs); cursor:pointer;">
+              <input type="checkbox" name="class_ids" value="{{ c.id }}" class="perm-class-check" data-cat-id="{{ c.category_id or '' }}">
+              <span>
+                <strong>{{ c.name }}</strong>
+                {% if c.category %}
+                <span style="font-size:var(--text-2xs); color:var(--text-muted);">({{ c.category.name }})</span>
+                {% endif %}
+              </span>
+            </label>
+            {% endfor %}
+          {% else %}
+            <div style="color:var(--text-muted); font-size:var(--text-xs); padding:8px 0; text-align:center;">No classes available.</div>
+          {% endif %}
+        </div>
+      </div>
+
+      <div style="display:flex; gap:10px; justify-content:flex-end; margin-top:20px;">
+        <button type="button" class="btn btn-secondary" data-close-modal="modal-manage-permissions">Cancel</button>
+        <button type="submit" class="btn btn-primary">Save Access Scopes</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+function openPermissionsModal(staffId, staffName, assignedClassIds, assignedCatIds) {
+  const form = document.getElementById('form-manage-permissions');
+  const title = document.getElementById('modal-perm-staff-name');
+  if (!form) return;
+
+  form.action = `/admin/staff/${staffId}/assignments`;
+  if (title) title.textContent = `Staff Member: ${staffName}`;
+
+  document.querySelectorAll('.perm-cat-check').forEach(cb => {
+    cb.checked = assignedCatIds && assignedCatIds.includes(cb.value);
+  });
+
+  document.querySelectorAll('.perm-class-check').forEach(cb => {
+    cb.checked = assignedClassIds && assignedClassIds.includes(cb.value);
+  });
+
+  openModal('modal-manage-permissions');
+}
+</script>
+
 {% endblock %}

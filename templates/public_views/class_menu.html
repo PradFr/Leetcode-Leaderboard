@@ -1,38 +1,49 @@
 {% extends "base.html" %}
+{% from "components/icons.html" import icon %}
 
-{% block title %}Class Menu - {{ cls.name }}{% endblock %}
+{% block title %}{{ cls.name }} — KAHE Placement Cell{% endblock %}
+{% block page_title %}{{ cls.name }}{% endblock %}
 
 {% block content %}
-<div style="max-width: 800px; margin: 40px auto; padding: 20px;">
-  <div style="margin-bottom: 30px; display: flex; align-items: center; justify-content: space-between;">
-    <h2 style="margin: 0; font-weight: 600;">{{ cls.name }}</h2>
-    <a href="/leaderboard" style="color: var(--text-secondary); text-decoration: none;">&larr; Back to Classes</a>
+<div style="max-width: 860px; margin: 20px auto; padding: 12px 0;">
+  <div style="margin-bottom: 28px; display: flex; align-items: center; justify-content: space-between; flex-wrap:wrap; gap:10px;">
+    <div>
+      <h2 class="page-title" style="margin: 0; font-size:var(--text-xl);">{{ cls.name }}</h2>
+      <p style="color: var(--text-secondary); font-size:var(--text-xs); margin-top:4px;">Select an option below to view class details.</p>
+    </div>
+    <a href="/leaderboard" class="btn btn-secondary btn-sm">
+      ← Back to Classes
+    </a>
   </div>
-  
-  <p style="color: var(--text-secondary); margin-bottom: 40px;">Select an option below to view class details.</p>
 
-  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 24px;">
     <a href="/leaderboard/{{ cls.id }}" style="text-decoration: none; color: inherit;">
-      <div class="card" style="transition: transform 0.2s, box-shadow 0.2s; height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 40px 20px; text-align: center;">
-        <svg style="width: 48px; height: 48px; margin-bottom: 15px; color: var(--primary);" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
-        </svg>
-        <h3 style="margin: 0 0 10px 0; color: var(--primary);">LeetCode Leaderboard</h3>
-        <p style="color: var(--text-secondary); margin: 0; font-size: 0.95rem;">
-          View live LeetCode stats and rankings for students in this class.
+      <div class="card stat-card-glow" style="height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 48px 24px; text-align: center; gap: 14px;">
+        <div class="stat-icon" style="width: 56px; height: 56px; background:var(--accent-dim); color:var(--accent);">
+          {{ icon('trophy', size="28px") }}
+        </div>
+        <h3 style="margin: 0; font-family:var(--font-display); font-size:var(--text-lg); font-weight:700; color: var(--text-primary);">LeetCode Leaderboard</h3>
+        <p style="color: var(--text-secondary); margin: 0; font-size: var(--text-xs); line-height: 1.6; max-width: 280px;">
+          View live LeetCode solved counts, weighted points, and student rankings for this cohort.
         </p>
+        <span class="btn btn-primary btn-sm" style="margin-top: 8px;">
+          Open Leaderboard →
+        </span>
       </div>
     </a>
 
     <a href="/class/{{ cls.id }}/tests" style="text-decoration: none; color: inherit;">
-      <div class="card" style="transition: transform 0.2s, box-shadow 0.2s; height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 40px 20px; text-align: center;">
-        <svg style="width: 48px; height: 48px; margin-bottom: 15px; color: var(--primary);" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path>
-        </svg>
-        <h3 style="margin: 0 0 10px 0; color: var(--primary);">Test Results</h3>
-        <p style="color: var(--text-secondary); margin: 0; font-size: 0.95rem;">
-          View daily test results and academic performance for this class.
+      <div class="card stat-card-glow" style="height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 48px 24px; text-align: center; gap: 14px;">
+        <div class="stat-icon" style="width: 56px; height: 56px; background:var(--purple-dim); color:var(--purple);">
+          {{ icon('file-text', size="28px") }}
+        </div>
+        <h3 style="margin: 0; font-family:var(--font-display); font-size:var(--text-lg); font-weight:700; color: var(--text-primary);">Test Results</h3>
+        <p style="color: var(--text-secondary); margin: 0; font-size: var(--text-xs); line-height: 1.6; max-width: 280px;">
+          View continuous assessment test scores, aptitude tests, and academic progress sheets.
         </p>
+        <span class="btn btn-secondary btn-sm" style="margin-top: 8px;">
+          View Tests →
+        </span>
       </div>
     </a>
   </div>

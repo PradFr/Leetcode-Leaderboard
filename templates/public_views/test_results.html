@@ -1,15 +1,19 @@
 {% extends "base.html" %}
+{% from "components/icons.html" import icon %}
 
-{% block title %}Test Results - {{ cls.name }}{% endblock %}
+{% block title %}Test Results: {{ cls.name }} — KAHE Placement Cell{% endblock %}
+{% block page_title %}{{ cls.name }} Test Results{% endblock %}
 
 {% block content %}
-<div style="max-width: 1200px; margin: 40px auto; padding: 20px;">
-  <div style="margin-bottom: 24px; display: flex; align-items: center; justify-content: space-between;">
+<div style="max-width: 1200px; margin: 0 auto; padding: 12px 0;">
+  <div style="margin-bottom: 24px; display: flex; align-items: center; justify-content: space-between; flex-wrap:wrap; gap:12px;">
     <div>
-      <h2 style="margin: 0; font-weight: 700; font-size: 1.5rem;">Test Results</h2>
-      <p style="color: var(--text-secondary); margin: 4px 0 0 0; font-size: 0.95rem;">{{ cls.name }}</p>
+      <h2 class="page-title" style="margin: 0; font-size:var(--text-xl);">Academic Test Results</h2>
+      <p style="color: var(--text-secondary); margin: 4px 0 0 0; font-size: var(--text-xs);">{{ cls.name }}</p>
     </div>
-    <a href="/class/{{ cls.id }}/menu" class="btn btn-secondary btn-sm" style="text-decoration: none;">&larr; Back to Options</a>
+    <a href="/class/{{ cls.id }}/menu" class="btn btn-secondary btn-sm">
+      ← Back to Options
+    </a>
   </div>
 
   {% if tests %}
@@ -20,10 +24,10 @@
         
         <!-- Sheet Selector Dropdown -->
         <div style="flex: 1; min-width: 260px;">
-          <label for="testSelector" style="display: block; margin-bottom: 8px; font-weight: 600; font-size: 0.85rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em;">
+          <label for="testSelector" class="form-label">
             Select Test Sheet
           </label>
-          <select id="testSelector" class="form-control" style="width: 100%; padding: 10px 14px; border-radius: 8px; border: 1px solid var(--border); background-color: var(--bg-card); color: var(--text-primary); font-size: 0.95rem;" onchange="showTest(this.value)">
+          <select id="testSelector" class="form-control" onchange="showTest(this.value)">
             {% for test in tests %}
               <option value="{{ test.id }}">{{ test.test_name }} (Uploaded: {{ test.upload_date.strftime('%Y-%m-%d %H:%M') }})</option>
             {% endfor %}
@@ -32,13 +36,13 @@
 
         <!-- Live Search Box -->
         <div style="flex: 1.2; min-width: 260px;">
-          <label for="testSearchInput" style="display: block; margin-bottom: 8px; font-weight: 600; font-size: 0.85rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em;">
+          <label for="testSearchInput" class="form-label">
             Search Records
           </label>
           <div class="search-box-wrap" style="width: 100%;">
-            <span class="search-box-icon">🔍</span>
-            <input type="text" id="testSearchInput" class="search-box-input" placeholder="Search by name, roll number, score, etc..." oninput="filterTestTable(this.value)" style="width: 100%; padding: 9px 36px 9px 36px;">
-            <button type="button" id="testSearchClear" class="search-box-clear" title="Clear search" onclick="clearTestSearch()" style="display: none;">✕</button>
+            <span class="search-box-icon">{{ icon('search', size="14px") }}</span>
+            <input type="text" id="testSearchInput" class="search-box-input" placeholder="Search by name, roll number, score, etc..." oninput="filterTestTable(this.value)">
+            <button type="button" id="testSearchClear" class="search-box-clear" title="Clear search" onclick="clearTestSearch()">{{ icon('x', size="13px") }}</button>
           </div>
         </div>
 
@@ -48,42 +52,42 @@
     <!-- Test Data Containers -->
     {% for test in tests %}
     <div id="test-container-{{ test.id }}" class="test-container card" style="display: none; overflow-x: auto; padding: 0;">
-      <div style="padding: 18px 24px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.01);">
+      <div style="padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;">
         <div>
-          <h3 style="margin: 0; font-size: 1.15rem; font-weight: 600;">{{ test.test_name }}</h3>
-          <span style="font-size: 0.8rem; color: var(--text-secondary);">Uploaded on {{ test.upload_date.strftime('%b %d, %Y at %I:%M %p') }}</span>
+          <h3 class="section-title" style="margin: 0; font-size:var(--text-md);">{{ test.test_name }}</h3>
+          <span style="font-size: var(--text-2xs); color: var(--text-muted);">Uploaded on {{ test.upload_date.strftime('%b %d, %Y at %I:%M %p') }}</span>
         </div>
-        <span class="badge" style="font-size: 0.8rem; padding: 4px 10px; border-radius: 20px; background: var(--bg-overlay); border: 1px solid var(--border); color: var(--text-secondary);">
-          <span class="record-count">{{ test.data|length }}</span> Records
+        <span style="font-size: var(--text-2xs); padding: 4px 10px; border-radius: var(--r-full); background: var(--bg-overlay); border: 1px solid var(--border); color: var(--text-secondary); font-weight:700;">
+          <span class="record-count font-mono">{{ test.data|length }}</span> Records
         </span>
       </div>
 
-      <table style="width: 100%; border-collapse: collapse; text-align: left;">
-        <thead>
-          <tr>
-            {% for col in test.columns %}
-              <th style="padding: 14px 20px; border-bottom: 2px solid var(--border); background-color: var(--bg-overlay); font-weight: 600; font-size: 0.85rem; color: var(--text-secondary); text-transform: capitalize; letter-spacing: 0.03em;">
-                {{ col }}
-              </th>
+      <div class="table-wrap" style="border:none; border-radius:0;">
+        <table class="table">
+          <thead>
+            <tr>
+              {% for col in test.columns %}
+                <th>{{ col }}</th>
+              {% endfor %}
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in test.data %}
+            <tr>
+              {% for col in test.columns %}
+                <td style="font-size: var(--text-sm);">
+                  {% if row[col] is number and row[col] is float %}
+                    <span class="font-mono">{{ "%.2f"|format(row[col]) }}</span>
+                  {% else %}
+                    {{ row[col] }}
+                  {% endif %}
+                </td>
+              {% endfor %}
+            </tr>
             {% endfor %}
-          </tr>
-        </thead>
-        <tbody>
-          {% for row in test.data %}
-          <tr style="border-bottom: 1px solid var(--border); transition: background-color 0.15s ease;">
-            {% for col in test.columns %}
-              <td style="padding: 14px 20px; font-size: 0.92rem;">
-                {% if row[col] is number and row[col] is float %}
-                  {{ "%.2f"|format(row[col]) }}
-                {% else %}
-                  {{ row[col] }}
-                {% endif %}
-              </td>
-            {% endfor %}
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
+          </tbody>
+        </table>
+      </div>
     </div>
     {% endfor %}
   </div>
@@ -133,7 +137,7 @@
           const colCount = activeContainer.querySelectorAll('thead th').length || 1;
           noResultsRow = document.createElement('tr');
           noResultsRow.className = 'no-results-row';
-          noResultsRow.innerHTML = `<td colspan="${colCount}" style="text-align: center; padding: 40px; color: var(--text-secondary); font-size: 0.95rem;">No matching records found for "<strong>${query}</strong>"</td>`;
+          noResultsRow.innerHTML = `<td colspan="${colCount}" style="text-align: center; padding: 40px; color: var(--text-secondary); font-size: var(--text-xs);">No matching records found for "<strong>${query}</strong>"</td>`;
           activeContainer.querySelector('tbody').appendChild(noResultsRow);
         } else {
           noResultsRow.style.display = '';
@@ -153,7 +157,6 @@
       }
     }
 
-    // Show first test by default
     window.addEventListener('DOMContentLoaded', () => {
       const selector = document.getElementById('testSelector');
       if (selector && selector.value) {
@@ -162,10 +165,12 @@
     });
   </script>
   {% else %}
-  <div class="card" style="padding: 50px 20px; text-align: center;">
-    <div style="font-size: 2.5rem; margin-bottom: 12px;">📊</div>
-    <h3 style="margin: 0 0 8px 0; font-weight: 600;">No test results available</h3>
-    <p style="color: var(--text-secondary); margin: 0; font-size: 0.95rem;">There are currently no active test results published for this class.</p>
+  <div class="empty-state card">
+    <div class="empty-icon-wrap">
+      {{ icon('file-text', size="28px") }}
+    </div>
+    <h3 style="font-family:var(--font-display); font-size:var(--text-lg); font-weight:700;">No test results available</h3>
+    <p style="color: var(--text-secondary); font-size: var(--text-sm);">There are currently no active test results published for this class.</p>
   </div>
   {% endif %}
 </div>

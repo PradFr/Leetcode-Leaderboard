@@ -1,0 +1,252 @@
+{% extends "base.html" %}
+{% from "components/icons.html" import icon %}
+
+{% block title %}Activity &amp; Audit Log — KAHE Placement Cell{% endblock %}
+{% block page_title %}System Audit Trail &amp; Sync History{% endblock %}
+
+{% block content %}
+<div class="content-wrapper">
+
+  <!-- Summary Cards Row -->
+  <div class="stats-grid" style="margin-bottom: 24px;">
+    <div class="stat-card stat-card-glow">
+      <div class="stat-header">
+        <span class="stat-lbl">Mutation Events</span>
+        <div class="stat-icon" style="background:var(--purple-dim); color:var(--purple);">
+          {{ icon('activity') }}
+        </div>
+      </div>
+      <div class="stat-val" data-counter="{{ total_logs }}">{{ total_logs }}</div>
+    </div>
+
+    {% if refresh_logs and refresh_logs|length > 0 %}
+    {% set last_rl = refresh_logs[0] %}
+    <div class="stat-card stat-card-glow">
+      <div class="stat-header">
+        <span class="stat-lbl">Latest Sync Execution</span>
+        <div class="stat-icon" style="background:var(--accent-dim); color:var(--accent);">
+          {{ icon('lightning') }}
+        </div>
+      </div>
+      <div class="stat-val font-mono" style="font-size:var(--text-2xl);">
+        {{ last_rl.success_count }} / {{ last_rl.total_students }}
+      </div>
+      <div style="font-size:var(--text-xs); color:var(--text-secondary); margin-top:2px;">
+        Run: <strong style="color:var(--text-primary)">{{ last_rl._time_str }}</strong>
+        {% if last_rl.failure_count > 0 %}
+        <span style="color:var(--red); margin-left:4px; font-weight:700;">({{ last_rl.failure_count }} failed)</span>
+        {% endif %}
+      </div>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Filter Card -->
+  <div class="card" style="margin-bottom: 24px; padding: 20px;">
+    <form method="get" action="/admin/activity" style="display:flex; flex-wrap:wrap; gap:14px; align-items:flex-end;">
+      
+      <div style="flex:1; min-width:180px;">
+        <label class="form-label">Actor (Name / Email)</label>
+        <input type="text" name="actor" class="form-control" placeholder="Search actor..." value="{{ filters.actor }}">
+      </div>
+
+      <div style="flex:1; min-width:180px;">
+        <label class="form-label">Action Type</label>
+        <select name="action_type" class="form-control">
+          <option value="all" {% if filters.action_type == 'all' %}selected{% endif %}>All Actions</option>
+          <option value="class_" {% if filters.action_type == 'class_' %}selected{% endif %}>Class Changes</option>
+          <option value="category_" {% if filters.action_type == 'category_' %}selected{% endif %}>Category Changes</option>
+          <option value="student_" {% if filters.action_type == 'student_' %}selected{% endif %}>Student Changes</option>
+          <option value="staff_" {% if filters.action_type == 'staff_' %}selected{% endif %}>Staff &amp; Permissions</option>
+          <option value="test_" {% if filters.action_type == 'test_' %}selected{% endif %}>Test Uploads / Deletions</option>
+          <option value="invite_" {% if filters.action_type == 'invite_' %}selected{% endif %}>Invites</option>
+        </select>
+      </div>
+
+      <div style="flex:1; min-width:140px;">
+        <label class="form-label">From Date</label>
+        <input type="date" name="date_from" class="form-control" value="{{ filters.date_from }}">
+      </div>
+
+      <div style="flex:1; min-width:140px;">
+        <label class="form-label">To Date</label>
+        <input type="date" name="date_to" class="form-control" value="{{ filters.date_to }}">
+      </div>
+
+      <div style="display:flex; gap:8px;">
+        <button type="submit" class="btn btn-primary btn-sm" style="height:38px;">
+          {{ icon('search', size="13px") }} Filter
+        </button>
+        <a href="/admin/activity" class="btn btn-secondary btn-sm" style="height:38px;">Reset</a>
+      </div>
+    </form>
+  </div>
+
+  <!-- Activity Logs Table -->
+  <div class="card" style="padding:0; overflow:hidden; margin-bottom:28px;">
+    <div style="padding:16px 20px; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center;">
+      <h3 class="section-title" style="margin:0; font-size:var(--text-md);">Mutation Event Log</h3>
+      <span style="font-size:var(--text-xs); color:var(--text-muted); font-weight:600;">Page {{ page }} of {{ total_pages }}</span>
+    </div>
+
+    {% if logs %}
+    <div class="table-wrap" style="border:none; border-radius:0;">
+      <table class="table">
+        <thead>
+          <tr>
+            <th style="width:160px;">Timestamp</th>
+            <th style="width:180px;">Actor</th>
+            <th style="width:160px;">Action Type</th>
+            <th>Description</th>
+            <th style="width:120px;">IP Address</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for l in logs %}
+          <tr>
+            <td>
+              <div style="font-weight:700; color:var(--text-primary); font-size:var(--text-xs);">{{ l._time_str }}</div>
+              <div style="font-size:var(--text-2xs); color:var(--text-muted);">{{ l.created_at.strftime('%Y-%m-%d %H:%M') if l.created_at else '-' }}</div>
+            </td>
+
+            <td>
+              <div style="font-weight:700; font-size:var(--text-xs); color:var(--text-primary);">{{ l.actor_name or 'System' }}</div>
+              <div style="font-size:var(--text-2xs); color:var(--text-secondary); font-family:var(--font-mono);">{{ l.actor_email or 'system' }}</div>
+            </td>
+
+            <td>
+              {% if 'created' in l.action_type or 'added' in l.action_type or 'joined' in l.action_type %}
+                <span style="background:var(--green-dim); color:var(--green); border:1px solid rgba(16,185,129,0.3); padding:3px 8px; border-radius:var(--r-full); font-size:var(--text-2xs); font-weight:700; display:inline-flex; align-items:center; gap:4px;">
+                  {{ icon('check', size="11px") }} {{ l.action_type }}
+                </span>
+              {% elif 'edited' in l.action_type or 'updated' in l.action_type or 'permissions' in l.action_type or 'role' in l.action_type %}
+                <span style="background:var(--blue-dim); color:var(--blue); border:1px solid rgba(59,130,246,0.3); padding:3px 8px; border-radius:var(--r-full); font-size:var(--text-2xs); font-weight:700; display:inline-flex; align-items:center; gap:4px;">
+                  {{ icon('edit', size="11px") }} {{ l.action_type }}
+                </span>
+              {% elif 'deleted' in l.action_type or 'removed' in l.action_type %}
+                <span style="background:var(--red-dim); color:var(--red); border:1px solid rgba(239,68,68,0.3); padding:3px 8px; border-radius:var(--r-full); font-size:var(--text-2xs); font-weight:700; display:inline-flex; align-items:center; gap:4px;">
+                  {{ icon('trash', size="11px") }} {{ l.action_type }}
+                </span>
+              {% elif 'refresh' in l.action_type %}
+                <span style="background:var(--accent-dim); color:var(--accent); border:1px solid rgba(16,185,129,0.3); padding:3px 8px; border-radius:var(--r-full); font-size:var(--text-2xs); font-weight:700; display:inline-flex; align-items:center; gap:4px;">
+                  {{ icon('refresh', size="11px") }} {{ l.action_type }}
+                </span>
+              {% else %}
+                <span style="background:var(--bg-overlay); border:1px solid var(--border); padding:3px 8px; border-radius:var(--r-full); font-size:var(--text-2xs); font-weight:600;">
+                  {{ l.action_type }}
+                </span>
+              {% endif %}
+            </td>
+
+            <td style="font-size:var(--text-xs); color:var(--text-primary); line-height:1.4;">
+              {{ l.description }}
+            </td>
+
+            <td style="font-size:var(--text-2xs); color:var(--text-muted); font-family:var(--font-mono);">
+              {{ l.ip_address or '—' }}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Pagination -->
+    <div style="padding:14px 20px; display:flex; justify-content:space-between; align-items:center; border-top:1px solid var(--border);">
+      <div>
+        <span style="font-size:var(--text-xs); color:var(--text-secondary);">
+          Total logged events: <strong>{{ total_logs }}</strong>
+        </span>
+      </div>
+      <div style="display:flex; gap:8px;">
+        {% if page > 1 %}
+        <a href="/admin/activity?page={{ page - 1 }}&actor={{ filters.actor }}&action_type={{ filters.action_type }}&date_from={{ filters.date_from }}&date_to={{ filters.date_to }}" class="btn btn-secondary btn-sm">
+          ← Previous
+        </a>
+        {% endif %}
+
+        {% if page < total_pages %}
+        <a href="/admin/activity?page={{ page + 1 }}&actor={{ filters.actor }}&action_type={{ filters.action_type }}&date_from={{ filters.date_from }}&date_to={{ filters.date_to }}" class="btn btn-secondary btn-sm">
+          Next →
+        </a>
+        {% endif %}
+      </div>
+    </div>
+
+    {% else %}
+    <div class="empty-state" style="padding:48px 0;">
+      <div class="empty-icon-wrap">
+        {{ icon('activity', size="28px") }}
+      </div>
+      <h3 style="font-family:var(--font-display); font-size:var(--text-md); font-weight:700;">No activity logged yet</h3>
+      <p style="color:var(--text-secondary); font-size:var(--text-xs);">Administrative mutations like creating classes and managing staff will be recorded here automatically.</p>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Auto-Refresh Runs History -->
+  {% if refresh_logs %}
+  <div class="card" style="padding:24px;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+      <div>
+        <h3 class="section-title" style="margin:0 0 2px 0; display:flex; align-items:center; gap:8px;">
+          <span style="color:var(--accent);">{{ icon('refresh') }}</span> Batch Sync Execution History
+        </h3>
+        <p style="margin:0; font-size:var(--text-xs); color:var(--text-secondary);">Recent background and manual student sync executions.</p>
+      </div>
+    </div>
+
+    <div class="table-wrap" style="border:none; border-radius:0;">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Timestamp</th>
+            <th>Triggered By</th>
+            <th>Status</th>
+            <th class="num-col">Success / Total</th>
+            <th class="num-col">Failed</th>
+            <th class="num-col">Duration</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in refresh_logs %}
+          <tr>
+            <td>
+              <strong style="font-size:var(--text-xs);">{{ r._time_str }}</strong>
+              <span style="font-size:var(--text-2xs); color:var(--text-muted); display:block;">{{ r.timestamp.strftime('%Y-%m-%d %H:%M:%S') if r.timestamp else '-' }}</span>
+            </td>
+            <td style="color:var(--text-secondary); font-family:var(--font-mono); font-size:var(--text-xs);">
+              {{ r.triggered_by or 'scheduled' }}
+            </td>
+            <td>
+              {% if r.status == 'completed' %}
+              <span style="background:var(--green-dim); color:var(--green); padding:2px 8px; border-radius:var(--r-full); font-weight:700; font-size:var(--text-2xs); border:1px solid rgba(16,185,129,0.3);">Completed</span>
+              {% elif r.status == 'partial' %}
+              <span style="background:rgba(245,158,11,0.15); color:#d97706; padding:2px 8px; border-radius:var(--r-full); font-weight:700; font-size:var(--text-2xs); border:1px solid rgba(245,158,11,0.3);">Partial</span>
+              {% else %}
+              <span style="background:var(--red-dim); color:var(--red); padding:2px 8px; border-radius:var(--r-full); font-weight:700; font-size:var(--text-2xs); border:1px solid rgba(239,68,68,0.3);">Failed</span>
+              {% endif %}
+            </td>
+            <td class="num-col font-mono" style="font-size:var(--text-xs);">
+              {{ r.success_count }} / {{ r.total_students }}
+            </td>
+            <td class="num-col font-mono" style="font-size:var(--text-xs);">
+              {% if r.failure_count and r.failure_count > 0 %}
+                <span style="color:var(--red); font-weight:700;">{{ r.failure_count }}</span>
+              {% else %}
+                <span style="color:var(--text-muted);">0</span>
+              {% endif %}
+            </td>
+            <td class="num-col font-mono" style="font-size:var(--text-xs); color:var(--text-secondary);">
+              {{ r.duration_seconds }}s
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}

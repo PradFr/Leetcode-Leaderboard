@@ -1,76 +1,193 @@
 {% extends "base.html" %}
+{% from "components/icons.html" import icon %}
 
-{% block title %}Classes — LeetCode Leaderboard{% endblock %}
-{% block page_title %}Classes{% endblock %}
+{% block title %}Classes & Categories — KAHE Placement Cell{% endblock %}
+{% block page_title %}Classes & Categories{% endblock %}
 
 {% block topbar_actions %}
-  <a href="#" class="btn btn-primary btn-sm" data-open-modal="modal-create-class">+ New Class</a>
+  <button type="button" class="btn btn-secondary btn-sm" data-open-modal="modal-create-category">
+    {{ icon('plus', size="14px") }} New Category
+  </button>
+  <button type="button" class="btn btn-primary btn-sm" data-open-modal="modal-create-class">
+    {{ icon('plus', size="14px") }} New Class
+  </button>
 {% endblock %}
 
 {% block content %}
 
-<div class="page-header">
-  <div class="page-header-left">
-    <h1>All Classes</h1>
-    <p>{{ classes | length }} class{{ 'es' if classes | length != 1 }} total</p>
+<!-- Header Summary -->
+<div style="margin-bottom: 24px;">
+  <div class="meta-label" style="margin-bottom:4px;">Academic Structure</div>
+  <p style="color:var(--text-secondary); font-size:var(--text-sm);">
+    {{ classes | length }} class{{ 'es' if classes | length != 1 }} across {{ categories | length }} categor{{ 'ies' if categories | length != 1 else 'y' }}
+  </p>
+</div>
+
+<!-- Categories Management Card -->
+<div class="card" style="margin-bottom: 32px;">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; flex-wrap: wrap; gap: 12px;">
+    <div>
+      <h2 class="section-title" style="display: flex; align-items: center; gap: 8px;">
+        <span style="color:var(--accent);">{{ icon('tag') }}</span> Categories & Departments
+      </h2>
+      <p style="font-size: var(--text-xs); color: var(--text-secondary); margin-top: 4px;">
+        Organize your institute's classes into distinct academic cohorts or department streams.
+      </p>
+    </div>
+    <button type="button" class="btn btn-primary btn-sm" data-open-modal="modal-create-category">
+      {{ icon('plus', size="14px") }} Add Category
+    </button>
   </div>
+
+  {% if category_data %}
+  <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 14px;">
+    {% for item in category_data %}
+    <div style="background: var(--bg-overlay); border: 1px solid var(--border); border-radius: var(--r-sm); padding: 14px 16px; display: flex; align-items: center; justify-content: space-between; gap: 12px;">
+      <div style="min-width: 0; flex: 1;">
+        <div style="font-weight: 700; font-size: var(--text-sm); color: var(--text-primary); text-overflow: ellipsis; overflow: hidden; white-space: nowrap;">
+          {{ item.cat.name }}
+        </div>
+        <div style="font-size: var(--text-xs); color: var(--text-muted); margin-top: 2px;">
+          {{ item.class_count }} class{{ 'es' if item.class_count != 1 }}
+        </div>
+      </div>
+      <div style="display: flex; align-items: center; gap: 6px; flex-shrink: 0;">
+        <button type="button" class="btn btn-ghost btn-sm" title="Edit Category"
+                onclick="openEditCategoryModal('{{ item.cat.id }}', '{{ item.cat.name }}')"
+                style="padding: 4px 8px;">
+          {{ icon('edit', size="14px") }} Edit
+        </button>
+        <form action="/admin/categories/{{ item.cat.id }}/delete" method="post" style="margin: 0;"
+              data-confirm="Are you sure you want to delete category '{{ item.cat.name }}'?"
+              data-confirm-ok="Delete" data-confirm-class="btn-danger">
+          <button type="submit" class="btn btn-ghost btn-sm" title="Delete Category"
+                  style="padding: 4px 8px; color: var(--red);">
+            {{ icon('trash', size="14px") }}
+          </button>
+        </form>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="empty-state" style="padding: 32px 16px; border: 1px dashed var(--border); border-radius: var(--r-sm);">
+    <div class="empty-icon-wrap" style="width:44px; height:44px;">
+      {{ icon('tag', size="20px") }}
+    </div>
+    <p style="color: var(--text-secondary); margin: 0 0 10px 0; font-size: var(--text-sm);">No categories created yet.</p>
+    <button type="button" class="btn btn-primary btn-sm" data-open-modal="modal-create-category">
+      {{ icon('plus', size="14px") }} Create First Category
+    </button>
+  </div>
+  {% endif %}
+</div>
+
+<!-- Classes Header with Category Filters -->
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 14px;">
+  <div>
+    <h2 class="section-title">All Classes</h2>
+  </div>
+  
+  {% if categories %}
+  <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
+    <span class="meta-label">Filter:</span>
+    <button type="button" class="btn btn-sm btn-category-filter btn-primary active" data-cat-filter="all" onclick="filterClassesByCategory('all', this)">
+      All ({{ classes | length }})
+    </button>
+    {% for cat in categories %}
+    <button type="button" class="btn btn-sm btn-category-filter btn-secondary" data-cat-filter="{{ cat.id }}" onclick="filterClassesByCategory('{{ cat.id }}', this)">
+      {{ cat.name }}
+    </button>
+    {% endfor %}
+  </div>
+  {% endif %}
 </div>
 
 {% if classes %}
-<div class="classes-grid">
+<div class="classes-grid" id="classes-grid-container" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(320px, 1fr)); gap:20px;">
   {% for item in classes %}
-  <a href="/admin/classes/{{ item.cls.id }}" class="class-card">
-    <div class="class-card-header">
-      <div class="class-icon">⬡</div>
-      <div style="flex:1;min-width:0">
-        <div class="class-name">{{ item.cls.name }}</div>
-        <div style="font-size:0.72rem;color:var(--text-muted);margin-top:2px;">
+  <a href="/admin/classes/{{ item.cls.id }}" class="card class-card" data-category-id="{{ item.cls.category_id or '' }}" style="text-decoration:none; color:inherit; display:flex; flex-direction:column; gap:12px;">
+    <div style="display:flex; align-items:center; gap:12px;">
+      <div class="stat-icon" style="background:var(--accent-dim); color:var(--accent); width:38px; height:38px;">
+        {{ icon('classes', size="18px") }}
+      </div>
+      <div style="flex:1; min-width:0;">
+        <div style="font-family:var(--font-display); font-size:var(--text-md); font-weight:700; color:var(--text-primary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+          {{ item.cls.name }}
+        </div>
+        <div style="font-size:var(--text-xs); color:var(--text-muted); margin-top:2px;">
           Created {{ item.cls.created_at.strftime('%b %d, %Y') if item.cls.created_at else 'recently' }}
         </div>
       </div>
     </div>
 
-    {% if item.cls.category %}
-    <div style="font-size:0.75rem; color:var(--text-secondary); margin-bottom: 5px;">
-      Category: {{ item.cls.category.name }}
+    <div>
+      {% if item.cls.category %}
+      <span style="display: inline-flex; align-items:center; gap:4px; padding: 3px 8px; font-size: var(--text-2xs); border-radius: var(--r-full); background: var(--accent-dim); color: var(--accent); font-weight: 700;">
+        {{ icon('tag', size="11px") }} {{ item.cls.category.name }}
+      </span>
+      {% else %}
+      <span style="display: inline-block; padding: 3px 8px; font-size: var(--text-2xs); border-radius: var(--r-full); background: var(--bg-overlay); color: var(--text-muted); font-weight:600;">
+        Uncategorized
+      </span>
+      {% endif %}
+    </div>
+
+    {% if item.cls.description %}
+    <div style="font-size:var(--text-xs); color:var(--text-secondary); line-height:1.5; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;">
+      {{ item.cls.description }}
     </div>
     {% endif %}
-    {% if item.cls.description %}
-    <div class="class-desc">{{ item.cls.description }}</div>
-    {% endif %}
 
-    <div class="class-meta">
-      <div class="class-meta-item">
-        <span>👥</span>
+    <div style="display:flex; align-items:center; justify-content:space-between; padding-top:10px; border-top:1px solid var(--border-muted); margin-top:auto; font-size:var(--text-xs); color:var(--text-secondary);">
+      <div style="display:flex; align-items:center; gap:6px;">
+        {{ icon('users', size="14px") }}
         <span>{{ item.student_count }} student{{ 's' if item.student_count != 1 }}</span>
       </div>
       {% if item.top_user %}
-      <div class="class-meta-item" style="margin-left:auto;color:var(--accent)">
-        <span>🏆</span>
+      <div style="display:flex; align-items:center; gap:6px; color:var(--accent); font-weight:600;">
+        {{ icon('trophy', size="14px") }}
         <span>{{ item.top_user.display_name or item.top_user.leetcode_username or 'Student' }}</span>
       </div>
       {% endif %}
     </div>
 
-    {% if item.invite and item.invite.is_active %}
-    <div style="display:flex;align-items:center;gap:6px;font-size:0.75rem;color:var(--green)">
-      <span>🔗</span> Invite link active
+    <div style="display:flex; align-items:center; gap:6px; font-size:var(--text-2xs); font-weight:700;">
+      {% if item.invite and item.invite.is_active %}
+      <span style="color:var(--green); display:flex; align-items:center; gap:4px;">
+        {{ icon('link', size="12px") }} Invite Active
+      </span>
+      {% else %}
+      <span style="color:var(--text-muted); display:flex; align-items:center; gap:4px;">
+        {{ icon('x', size="12px") }} No Invite Token
+      </span>
+      {% endif %}
     </div>
-    {% else %}
-    <div style="display:flex;align-items:center;gap:6px;font-size:0.75rem;color:var(--text-muted)">
-      <span>🚫</span> No invite link yet
-    </div>
-    {% endif %}
   </a>
   {% endfor %}
 </div>
 
+<div id="no-filtered-classes" style="display: none; padding: 48px 24px; text-align: center;" class="card">
+  <div class="empty-icon-wrap" style="margin: 0 auto 12px auto;">
+    {{ icon('classes', size="24px") }}
+  </div>
+  <h3 style="font-family:var(--font-display); font-size: var(--text-md); font-weight:700; margin-bottom: 4px;">No classes in this category</h3>
+  <p style="color: var(--text-secondary); font-size: var(--text-xs); margin: 0 0 16px 0;">Create a new class cohort and assign it to this category.</p>
+  <button type="button" class="btn btn-primary btn-sm" data-open-modal="modal-create-class">
+    {{ icon('plus', size="14px") }} Create Class
+  </button>
+</div>
+
 {% else %}
-<div class="empty-state">
-  <div class="empty-icon">📂</div>
-  <h3>No classes yet</h3>
-  <p>Create your first class and share the invite link with students.</p>
-  <a href="#" class="btn btn-primary" data-open-modal="modal-create-class">+ Create First Class</a>
+<div class="empty-state card">
+  <div class="empty-icon-wrap">
+    {{ icon('classes', size="28px") }}
+  </div>
+  <h3 style="font-family:var(--font-display); font-size:var(--text-lg); font-weight:700;">No classes yet</h3>
+  <p style="color: var(--text-secondary); font-size: var(--text-sm);">Create your first class cohort and share the invite link with students.</p>
+  <button type="button" class="btn btn-primary btn-sm" data-open-modal="modal-create-class" style="margin-top:8px;">
+    {{ icon('plus', size="14px") }} Create First Class
+  </button>
 </div>
 {% endif %}
 
@@ -79,22 +196,24 @@
   <div class="modal">
     <div class="modal-header">
       <h3 class="modal-title">Create New Class</h3>
-      <button class="modal-close" data-close-modal="modal-create-class">✕</button>
+      <button class="modal-close" data-close-modal="modal-create-class" title="Close">
+        {{ icon('x') }}
+      </button>
     </div>
     {% if not categories %}
-      <div class="alert alert-warning" style="margin-bottom: 15px;">
-        You must create a Category before creating a Class.
+      <div class="alert alert-error" style="margin-bottom: 16px;">
+        {{ icon('alert') }} You must create a Category before creating a Class.
       </div>
       <form action="/admin/categories" method="post">
         <div class="form-group">
-          <label class="form-label">Category Name</label>
+          <label class="form-label">Category Name *</label>
           <input class="form-control" type="text" name="name" required placeholder="e.g. Faculty of Engineering">
         </div>
-        <button type="submit" class="btn btn-primary">Create Category</button>
+        <button type="submit" class="btn btn-primary w-full">Create Category</button>
       </form>
-      <button type="button" class="btn btn-secondary" style="margin-top: 10px; width: 100%;" data-close-modal="modal-create-class">Cancel</button>
+      <button type="button" class="btn btn-secondary w-full" style="margin-top: 10px;" data-close-modal="modal-create-class">Cancel</button>
     {% else %}
-    <form action="/admin/classes" method="post" onsubmit="return confirm('Are you sure you want to create this new class?');">
+    <form action="/admin/classes" method="post">
       <div class="form-group">
         <label class="form-label" for="new-class-cat">Category *</label>
         <select id="new-class-cat" class="form-control" name="category_id" required>
@@ -107,14 +226,14 @@
       <div class="form-group">
         <label class="form-label" for="new-class-name">Class Name *</label>
         <input id="new-class-name" class="form-control" type="text" name="name"
-               placeholder="e.g. CS101 – Spring 2025" required autofocus>
+               placeholder="e.g. CS101 – Batch 2029" required autofocus>
       </div>
       <div class="form-group">
         <label class="form-label" for="new-class-desc">Description</label>
         <textarea id="new-class-desc" class="form-control" name="description"
-                  placeholder="Optional description of this class..."></textarea>
+                  placeholder="Optional description of this cohort..."></textarea>
       </div>
-      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:4px;">
+      <div style="display:flex; gap:10px; justify-content:flex-end; margin-top:12px;">
         <button type="button" class="btn btn-secondary" data-close-modal="modal-create-class">Cancel</button>
         <button type="submit" class="btn btn-primary">Create Class</button>
       </div>
@@ -123,28 +242,85 @@
   </div>
 </div>
 
-<!-- Create Category Button and Modal -->
-<div style="margin-top: 20px;">
-  <button class="btn btn-secondary btn-sm" data-open-modal="modal-create-category">+ New Category</button>
-</div>
-
+<!-- Create Category Modal -->
 <div class="modal-backdrop" id="modal-create-category">
   <div class="modal">
     <div class="modal-header">
       <h3 class="modal-title">Create New Category</h3>
-      <button class="modal-close" data-close-modal="modal-create-category">✕</button>
+      <button class="modal-close" data-close-modal="modal-create-category" title="Close">
+        {{ icon('x') }}
+      </button>
     </div>
     <form action="/admin/categories" method="post">
       <div class="form-group">
-        <label class="form-label">Category Name *</label>
-        <input class="form-control" type="text" name="name" required placeholder="e.g. Faculty of Engineering">
+        <label class="form-label" for="new-category-name">Category Name *</label>
+        <input id="new-category-name" class="form-control" type="text" name="name" required placeholder="e.g. Department of Computer Science">
       </div>
-      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:4px;">
+      <div style="display:flex; gap:10px; justify-content:flex-end; margin-top:12px;">
         <button type="button" class="btn btn-secondary" data-close-modal="modal-create-category">Cancel</button>
-        <button type="submit" class="btn btn-primary">Create</button>
+        <button type="submit" class="btn btn-primary">Create Category</button>
       </div>
     </form>
   </div>
 </div>
+
+<!-- Edit Category Modal -->
+<div class="modal-backdrop" id="modal-edit-category">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 class="modal-title">Edit Category</h3>
+      <button class="modal-close" data-close-modal="modal-edit-category" title="Close">
+        {{ icon('x') }}
+      </button>
+    </div>
+    <form id="form-edit-category" action="" method="post">
+      <div class="form-group">
+        <label class="form-label" for="edit-category-name">Category Name *</label>
+        <input id="edit-category-name" class="form-control" type="text" name="name" required>
+      </div>
+      <div style="display:flex; gap:10px; justify-content:flex-end; margin-top:12px;">
+        <button type="button" class="btn btn-secondary" data-close-modal="modal-edit-category">Cancel</button>
+        <button type="submit" class="btn btn-primary">Save Changes</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+function openEditCategoryModal(catId, catName) {
+  const form = document.getElementById('form-edit-category');
+  const input = document.getElementById('edit-category-name');
+  if (form && input) {
+    form.action = '/admin/categories/' + encodeURIComponent(catId) + '/edit';
+    input.value = catName;
+    openModal('modal-edit-category');
+  }
+}
+
+function filterClassesByCategory(catId, btn) {
+  document.querySelectorAll('.btn-category-filter').forEach(b => {
+    b.classList.remove('active', 'btn-primary');
+    b.classList.add('btn-secondary');
+  });
+  btn.classList.remove('btn-secondary');
+  btn.classList.add('active', 'btn-primary');
+
+  const cards = document.querySelectorAll('.class-card');
+  let visible = 0;
+  cards.forEach(card => {
+    if (catId === 'all' || card.dataset.categoryId === catId) {
+      card.style.display = '';
+      visible++;
+    } else {
+      card.style.display = 'none';
+    }
+  });
+
+  const emptyMsg = document.getElementById('no-filtered-classes');
+  if (emptyMsg) {
+    emptyMsg.style.display = (visible === 0) ? 'block' : 'none';
+  }
+}
+</script>
 
 {% endblock %}

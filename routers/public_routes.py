@@ -31,10 +31,13 @@ async def public_index(request: Request, db: Session = Depends(get_db)):
         else:
             ungrouped.append(cls)
             
+    # Filter out empty categories for public view so guest users only see categories with classes
+    visible_grouped = [g for g in grouped.values() if len(g["classes"]) > 0]
+            
     return templates.TemplateResponse("public_views/index.html", {
         "request": request,
         "user": user,
-        "grouped": grouped.values(),
+        "grouped": visible_grouped,
         "ungrouped": ungrouped,
     })
 
@@ -135,7 +138,7 @@ async def join_class(
 
     username = leetcode_username.strip()
     name = (display_name or username).strip()
-    reg_num = register_number.strip() if register_number else None
+    reg_num = register_number.strip().upper() if register_number and register_number.strip() else None
     
     if not username:
         return RedirectResponse(f"/join/{token}?error=LeetCode+username+required", status_code=302)
@@ -148,6 +151,10 @@ async def join_class(
     if not stats:
         return RedirectResponse(f"/join/{token}?error=Could+not+fetch+stats.+Please+check+your+username.", status_code=302)
 
+    from datetime import datetime, timezone
+    now_utc = datetime.now(timezone.utc)
+    last_act = stats.get("last_submission_time") or now_utc
+
     new_student = Student(
         class_id=invite.class_id,
         leetcode_username=username,
@@ -158,11 +165,22 @@ async def join_class(
         solved_hard=stats["hard"],
         solved_total=stats["total"],
         points=stats["easy"] * 1 + stats["medium"] * 3 + stats["hard"] * 5,
-        ranking=stats["ranking"]
+        ranking=stats["ranking"],
+        last_active=last_act,
+        last_updated=now_utc
     )
     db.add(new_student)
     db.commit()
 
-    # Get class so we can redirect to its leaderboard
     cls = db.query(Class).filter(Class.id == invite.class_id).first()
+    cls_name = cls.name if cls else invite.class_id
+    auth.log_audit_event(
+        db, request, None,
+        action_type="student_joined_invite",
+        target_type="student",
+        target_id=new_student.id,
+        description=f"Student '{name}' (@{username}) self-registered to class '{cls_name}' via invite token"
+    )
+
+    # Get class so we can redirect to its leaderboard
     return RedirectResponse(f"/leaderboard/{cls.id}?success=Joined+successfully", status_code=302)

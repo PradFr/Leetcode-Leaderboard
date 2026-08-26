@@ -71,20 +71,46 @@ document.querySelectorAll('.alert[data-auto-dismiss]').forEach(alert => {
   }, ms);
 });
 
-/* ── Refresh stats button with spinner ───────────────────── */
+/* ── Refresh stats button with skeleton shimmer & spinner ── */
 async function refreshStats(url, btn) {
   btn.disabled = true;
   const orig = btn.innerHTML;
   btn.innerHTML = '<span class="spinner"></span> Refreshing…';
+
+  // Inject skeleton shimmer on table rows if present
+  const table = document.querySelector('table[data-leaderboard-table], table[data-sortable]');
+  const tbody = table ? table.querySelector('tbody') : null;
+  let originalRows = null;
+  if (tbody) {
+    originalRows = tbody.innerHTML;
+    tbody.innerHTML = Array(6).fill(0).map(() => `
+      <tr class="skeleton-row">
+        <td><div class="skeleton-box" style="width:30px"></div></td>
+        <td><div class="skeleton-box" style="width:140px"></div></td>
+        <td><div class="skeleton-box" style="width:90px"></div></td>
+        <td><div class="skeleton-box" style="width:45px"></div></td>
+        <td><div class="skeleton-box" style="width:45px"></div></td>
+        <td><div class="skeleton-box" style="width:45px"></div></td>
+        <td><div class="skeleton-box" style="width:55px"></div></td>
+        <td><div class="skeleton-box" style="width:65px"></div></td>
+        <td><div class="skeleton-box" style="width:75px"></div></td>
+        <td><div class="skeleton-box" style="width:100px"></div></td>
+        <td><div class="skeleton-box" style="width:50px"></div></td>
+      </tr>
+    `).join('');
+  }
+
   try {
     const res = await fetch(url, { method: 'POST' });
     const data = await res.json();
     if (data.success || data.refreshed !== undefined) {
       window.location.reload();
     } else {
+      if (tbody && originalRows) tbody.innerHTML = originalRows;
       showToast(data.error || 'Refresh failed.', 'error');
     }
   } catch {
+    if (tbody && originalRows) tbody.innerHTML = originalRows;
     showToast('Network error. Please try again.', 'error');
   } finally {
     btn.innerHTML = orig;
@@ -207,50 +233,101 @@ function togglePasswordVisibility(inputId, btn) {
 
 /* Theme Toggle & Initialization */
 document.addEventListener('DOMContentLoaded', () => {
-  const toggle = document.getElementById('theme-toggle');
-  if (toggle) {
+  const themeToggle = document.getElementById('theme-toggle');
+  if (themeToggle) {
     const currentTheme = localStorage.getItem('theme') || 'light';
     if (currentTheme === 'dark') {
       document.documentElement.setAttribute('data-theme', 'dark');
-      toggle.checked = true;
+      if (themeToggle.type === 'checkbox') themeToggle.checked = true;
     } else {
       document.documentElement.removeAttribute('data-theme');
-      toggle.checked = false;
+      if (themeToggle.type === 'checkbox') themeToggle.checked = false;
     }
-    toggle.addEventListener('change', (e) => {
-      if (e.target.checked) {
+
+    const switchTheme = (setDark) => {
+      if (setDark) {
         document.documentElement.setAttribute('data-theme', 'dark');
         localStorage.setItem('theme', 'dark');
+        if (themeToggle.type === 'checkbox') themeToggle.checked = true;
       } else {
         document.documentElement.removeAttribute('data-theme');
         localStorage.setItem('theme', 'light');
+        if (themeToggle.type === 'checkbox') themeToggle.checked = false;
       }
-    });
+    };
+
+    if (themeToggle.tagName === 'BUTTON') {
+      themeToggle.addEventListener('click', () => {
+        const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+        switchTheme(!isDark);
+      });
+    } else {
+      themeToggle.addEventListener('change', (e) => {
+        switchTheme(e.target.checked);
+      });
+    }
   }
 
   const mobileToggle = document.getElementById('mobile-sidebar-toggle');
-  const sidebar = document.querySelector('.sidebar');
+  const sidebar = document.getElementById('app-sidebar') || document.querySelector('.sidebar');
+  const mobileOverlay = document.getElementById('mobile-overlay');
+
   if (mobileToggle && sidebar) {
     mobileToggle.addEventListener('click', (e) => {
       e.stopPropagation();
       sidebar.classList.toggle('open');
-    });
-    document.addEventListener('click', (e) => {
-      if (window.innerWidth <= 768 && sidebar.classList.contains('open') && !sidebar.contains(e.target) && e.target !== mobileToggle) {
-        sidebar.classList.remove('open');
-      }
+      if (mobileOverlay) mobileOverlay.classList.toggle('open');
     });
   }
+
+  if (mobileOverlay && sidebar) {
+    mobileOverlay.addEventListener('click', () => {
+      sidebar.classList.remove('open');
+      mobileOverlay.classList.remove('open');
+    });
+  }
+
+  // Animate stat counters on page load
+  animateStatCounters();
 
   initLeaderboardSearchAndSort();
   initExportModal();
 });
+
+/* ── Smooth Stat Counter Animation ───────────────────────── */
+function animateStatCounters() {
+  const counters = document.querySelectorAll('[data-counter]');
+  counters.forEach(el => {
+    const target = parseInt(el.dataset.counter, 10) || 0;
+    if (target <= 0) {
+      el.textContent = target.toString();
+      return;
+    }
+    const duration = 1200;
+    const start = performance.now();
+
+    function step(now) {
+      const elapsed = now - start;
+      const progress = Math.min(elapsed / duration, 1);
+      const ease = 1 - Math.pow(1 - progress, 3);
+      const current = Math.floor(ease * target);
+      el.textContent = current.toLocaleString();
+      if (progress < 1) {
+        requestAnimationFrame(step);
+      } else {
+        el.textContent = target.toLocaleString();
+      }
+    }
+    requestAnimationFrame(step);
+  });
+}
 
 /* ── Leaderboard Live Search & Dynamic Sorting ───────────────────── */
 function initLeaderboardSearchAndSort() {
   const searchInput = document.getElementById('leaderboard-search');
   const clearBtn = document.getElementById('search-clear-btn');
   const sortDropdown = document.getElementById('sort-dropdown');
+  const filterInactiveOnly = document.getElementById('filter-inactive-only');
   const table = document.querySelector('table[data-leaderboard-table], table[data-sortable]');
   
   if (!table) return;
@@ -259,6 +336,8 @@ function initLeaderboardSearchAndSort() {
 
   function filterTable() {
     const query = (searchInput ? searchInput.value : '').toLowerCase().trim();
+    const inactiveOnly = filterInactiveOnly ? filterInactiveOnly.checked : false;
+
     if (clearBtn) {
       clearBtn.style.display = query.length > 0 ? 'block' : 'none';
     }
@@ -271,8 +350,11 @@ function initLeaderboardSearchAndSort() {
       const reg = (row.querySelector('.display-reg-text')?.textContent || '').toLowerCase();
       const user = (row.querySelector('[data-leetcode-user]')?.textContent || row.textContent || '').toLowerCase();
       
-      const match = !query || name.includes(query) || reg.includes(query) || user.includes(query);
-      if (match) {
+      const isInactive = row.dataset.isInactive === 'true' || parseInt(row.dataset.daysInactive || '0', 10) >= 7;
+      const matchInactive = !inactiveOnly || isInactive;
+      const matchSearch = !query || name.includes(query) || reg.includes(query) || user.includes(query);
+
+      if (matchSearch && matchInactive) {
         row.style.display = '';
         visibleCount++;
       } else {
@@ -282,14 +364,16 @@ function initLeaderboardSearchAndSort() {
 
     // Handle empty search state
     let emptyRow = tbody.querySelector('.empty-search-row');
-    if (visibleCount === 0 && query.length > 0) {
+    if (visibleCount === 0) {
       if (!emptyRow) {
         emptyRow = document.createElement('tr');
         emptyRow.className = 'empty-search-row';
-        emptyRow.innerHTML = `<td colspan="10" style="text-align:center; padding:32px; color:var(--text-secondary);">
-          <div style="font-size:1.8rem; margin-bottom:8px;">🔍</div>
-          <div style="font-weight:600;">No matching students found</div>
-          <div style="font-size:0.8rem; color:var(--text-muted);">Try searching with a different term</div>
+        emptyRow.innerHTML = `<td colspan="11" style="text-align:center; padding:40px 20px; color:var(--text-secondary);">
+          <div class="empty-icon-wrap" style="margin:0 auto 10px auto; width:44px; height:44px;">
+            <svg class="svg-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+          </div>
+          <div style="font-weight:700; font-size:var(--text-sm); color:var(--text-primary);">No matching students found</div>
+          <div style="font-size:var(--text-xs); color:var(--text-muted); margin-top:2px;">Try adjusting your search query or filter</div>
         </td>`;
         tbody.appendChild(emptyRow);
       } else {
@@ -314,6 +398,9 @@ function initLeaderboardSearchAndSort() {
       searchInput.focus();
     });
   }
+  if (filterInactiveOnly) {
+    filterInactiveOnly.addEventListener('change', filterTable);
+  }
 
   function sortTableByColumn(colKey, asc = false) {
     const rows = [...tbody.querySelectorAll('tr[data-student-row], tr:not(.empty-search-row)')];
@@ -324,6 +411,19 @@ function initLeaderboardSearchAndSort() {
       
       if (!av) av = a.querySelector(`[data-col="${colKey}"]`)?.dataset.val ?? '';
       if (!bv) bv = b.querySelector(`[data-col="${colKey}"]`)?.dataset.val ?? '';
+
+      if (colKey === 'last_active' || colKey === 'daysInactive') {
+        av = a.dataset.daysInactive || a.querySelector('[data-col="last_active"]')?.dataset.val || '0';
+        bv = b.dataset.daysInactive || b.querySelector('[data-col="last_active"]')?.dataset.val || '0';
+      }
+      if (colKey === 'reg' || colKey === 'register_number') {
+        av = a.dataset.reg || a.querySelector('.display-reg-text')?.textContent.trim() || '';
+        bv = b.dataset.reg || b.querySelector('.display-reg-text')?.textContent.trim() || '';
+      }
+      if (colKey === 'name') {
+        av = a.dataset.name || a.querySelector('.display-name-text')?.textContent.trim() || '';
+        bv = b.dataset.name || b.querySelector('.display-name-text')?.textContent.trim() || '';
+      }
       
       const an = parseFloat(av), bn = parseFloat(bv);
       if (!isNaN(an) && !isNaN(bn)) {
@@ -353,6 +453,9 @@ function initLeaderboardSearchAndSort() {
       else if (val === 'med') sortTableByColumn('med', false);
       else if (val === 'hard') sortTableByColumn('hard', false);
       else if (val === 'rank') sortTableByColumn('rank', true);
+      else if (val === 'last_active') sortTableByColumn('last_active', false);
+      else if (val === 'reg' || val === 'register_number') sortTableByColumn('reg', true);
+      else if (val === 'name') sortTableByColumn('name', true);
     });
   }
 }
@@ -506,8 +609,9 @@ function initExportModal() {
         const medium = parseInt(r.dataset.med || r.querySelector('[data-col="med"]')?.textContent.trim() || '0', 10);
         const hard = parseInt(r.dataset.hard || r.querySelector('[data-col="hard"]')?.textContent.trim() || '0', 10);
         const rank = parseInt(r.dataset.rank || r.querySelector('[data-col="rank"]')?.textContent.trim() || '0', 10);
+        const lastActiveEl = r.querySelector('[data-col="last_active"]');
 
-        return {
+        const rowObj = {
           "Rank": fromVal + idx,
           "Student Name": name,
           "Register Number": reg,
@@ -519,6 +623,12 @@ function initExportModal() {
           "Hard": hard,
           "LeetCode Rank": rank || 'N/A'
         };
+
+        if (lastActiveEl) {
+          rowObj["Last Active"] = lastActiveEl.textContent.trim();
+        }
+
+        return rowObj;
       });
 
       const classNameTitle = document.querySelector('h1, h2, .page-title')?.textContent.trim().replace(/[^a-zA-Z0-9_\-]/g, '_') || 'Leaderboard';
