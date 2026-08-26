@@ -161,6 +161,14 @@ async def add_staff(
     if not user or not auth.can_manage_staff(user):
         return _render_403(request, "Only authorized admins can add staff.")
 
+    is_super = auth.is_superadmin(user)
+
+    # Security Rule: Only Super Admins can create another Super Admin account.
+    if role == "superadmin" and not is_super:
+        return _render_403(request, "Only Super Administrators can create Super Admin accounts.")
+
+    actual_role = "superadmin" if (role == "superadmin" and is_super) else "staff"
+
     email_clean = email.strip().lower()
     existing = db.query(Profile).filter(func.lower(Profile.email) == email_clean).first()
     if existing:
@@ -177,7 +185,7 @@ async def add_staff(
             id=uuid.UUID(user_id),
             email=email_clean,
             full_name=full_name.strip(),
-            role="superadmin" if role == "superadmin" else "staff"
+            role=actual_role
         )
         db.add(new_profile)
         db.commit()
@@ -187,7 +195,7 @@ async def add_staff(
             action_type="staff_created",
             target_type="staff",
             target_id=str(user_id),
-            description=f"Created {role} account for '{full_name.strip()}' ({email_clean})"
+            description=f"Created {actual_role} account for '{full_name.strip()}' ({email_clean})"
         )
 
     return RedirectResponse("/admin/staff?success=Staff+member+added+successfully", status_code=302)
@@ -199,6 +207,8 @@ async def delete_staff(request: Request, admin_id: str, db: Session = Depends(ge
     if not user or not auth.can_manage_staff(user):
         return _render_403(request, "Only authorized admins can remove staff.")
 
+    is_super = auth.is_superadmin(user)
+
     if user.get("id") == admin_id:
         return RedirectResponse("/admin/staff?error=You+cannot+delete+your+own+account", status_code=302)
 
@@ -206,8 +216,11 @@ async def delete_staff(request: Request, admin_id: str, db: Session = Depends(ge
         uid = uuid.UUID(admin_id)
         profile = db.query(Profile).filter(Profile.id == uid).first()
         if profile:
-            if profile.role == "superadmin" and profile.email.lower() in auth.ADMIN_EMAILS:
-                return RedirectResponse("/admin/staff?error=Primary+Super+Admin+accounts+cannot+be+deleted", status_code=302)
+            if profile.role == "superadmin":
+                if not is_super:
+                    return _render_403(request, "Only Super Administrators can remove Super Admin accounts.")
+                if profile.email.lower() in auth.ADMIN_EMAILS:
+                    return RedirectResponse("/admin/staff?error=Primary+Super+Admin+accounts+cannot+be+deleted", status_code=302)
             
             p_name = profile.full_name or profile.email
             p_email = profile.email
@@ -284,13 +297,20 @@ async def update_staff_role(
     if not user or not auth.can_manage_staff(user):
         return _render_403(request, "Only authorized admins can change staff roles.")
 
+    is_super = auth.is_superadmin(user)
+    if role == "superadmin" and not is_super:
+        return _render_403(request, "Only Super Administrators can assign the Super Admin role.")
+
     try:
         uid = uuid.UUID(admin_id)
         profile = db.query(Profile).filter(Profile.id == uid).first()
         if not profile:
             return RedirectResponse("/admin/staff?error=Profile+not+found", status_code=302)
 
-        new_role = "superadmin" if role == "superadmin" else "staff"
+        if profile.role == "superadmin" and not is_super:
+            return _render_403(request, "Only Super Administrators can modify Super Admin accounts.")
+
+        new_role = "superadmin" if (role == "superadmin" and is_super) else "staff"
         old_role = profile.role
         profile.role = new_role
         db.commit()
