@@ -506,31 +506,16 @@ async def class_detail(request: Request, class_id: str, db: Session = Depends(ge
     inactive_count = 0
     for i, s in enumerate(leaderboard):
         s._rank = i + 1
-        s._inactivity = get_inactivity_status(s.last_active, is_superadmin=is_super)
-        s._last_active_str = s._inactivity["relative"]
-        
         if is_super:
+            s._inactivity = get_inactivity_status(s.last_active, is_superadmin=True)
+            s._last_active_str = s._inactivity["relative"]
             s._days_inactive = s._inactivity["days"]
+            if s._inactivity.get("is_inactive"):
+                inactive_count += 1
         else:
-            # Map to coarse bucket representation so exact day count is not leaked in DOM
-            days = s._inactivity["days"]
-            if days < 1:
-                s._days_inactive = 0
-            elif days <= 3:
-                s._days_inactive = 2
-            elif days <= 7:
-                s._days_inactive = 5
-            elif days <= 14:
-                s._days_inactive = 10
-            elif days <= 21:
-                s._days_inactive = 18
-            elif days <= 30:
-                s._days_inactive = 25
-            else:
-                s._days_inactive = 45
-
-        if s._inactivity.get("is_inactive"):
-            inactive_count += 1
+            s._inactivity = None
+            s._last_active_str = None
+            s._days_inactive = None
 
     invite = db.query(Invite).filter(Invite.class_id == class_id, Invite.is_active == True).first()
     base_url = str(request.base_url).rstrip("/")

@@ -179,12 +179,15 @@
         <option value="med">Sort by: Medium</option>
         <option value="hard">Sort by: Hard</option>
         <option value="rank">Sort by: LC Rank</option>
+        {% if is_superadmin %}
         <option value="last_active">Sort by: Inactivity</option>
+        {% endif %}
         <option value="reg">Sort by: Register Number</option>
         <option value="name">Sort by: Name</option>
       </select>
 
-      <!-- Inactive Only Filter -->
+      {% if is_superadmin %}
+      <!-- Inactive Only Filter (Superadmin Only) -->
       <label class="inactive-toggle-wrap">
         <input type="checkbox" id="filter-inactive-only" style="cursor:pointer;">
         <span style="font-weight:700; display:flex; align-items:center; gap:4px;">
@@ -194,6 +197,7 @@
           {% endif %}
         </span>
       </label>
+      {% endif %}
     </div>
 
     <div class="leaderboard-toolbar-right">
@@ -230,7 +234,9 @@
             </button>
           </th>
           <th class="num-col" data-sort="rank" title="Sort by LeetCode Global Rank">LC Rank</th>
+          {% if is_superadmin %}
           <th data-sort="last_active" title="Sort by Last Active Status">Last Active</th>
+          {% endif %}
           <th style="text-align:right;">Actions</th>
         </tr>
       </thead>
@@ -246,8 +252,10 @@
             data-lc-user="{{ s.leetcode_username or '' }}"
             data-reg="{{ s.register_number or '' }}"
             data-name="{{ s.display_name or '' }}"
-            data-days-inactive="{{ s._days_inactive }}"
-            data-is-inactive="{{ 'true' if s._inactivity.is_inactive else 'false' }}">
+            {% if is_superadmin %}
+            data-days-inactive="{{ s._days_inactive or 0 }}"
+            data-is-inactive="{{ 'true' if s._inactivity and s._inactivity.is_inactive else 'false' }}"
+            {% endif %}>
           <td>
             <span class="rank-badge rank-{{ s._rank if s._rank <= 3 else 'n' }}">{{ s._rank }}</span>
           </td>
@@ -256,7 +264,9 @@
               <div class="avatar-sm" data-avatar="{{ s.display_name or s.user_id }}"></div>
               <div>
                 <div style="font-weight:700; font-size:var(--text-sm); display:flex; align-items:center; gap:6px;">
+                  {% if is_superadmin and s._inactivity %}
                   <span class="status-dot {{ s._inactivity.badge_class }}" title="{{ s._inactivity.tooltip }}"></span>
+                  {% endif %}
                   <span class="display-name-text">{{ s.display_name or 'Student' }}</span>
                   <span class="display-reg-text" style="display: none;">{{ s.register_number or 'N/A' }}</span>
                 </div>
@@ -293,11 +303,13 @@
           <td class="num-col" data-val="{{ s.ranking or 0 }}" data-col="rank" style="color:var(--text-secondary); font-size:var(--text-xs);">
             {{ '{:,}'.format(s.ranking) if s.ranking else '—' }}
           </td>
+          {% if is_superadmin %}
           <td data-val="{{ s._days_inactive }}" data-col="last_active">
             <span class="inactivity-pill {{ s._inactivity.pill_class or '' }}" title="{{ s._inactivity.tooltip }}">
               {{ s._last_active_str }}
             </span>
           </td>
+          {% endif %}
           <td style="text-align:right;">
             <form action="/admin/classes/{{ cls.id }}/remove-student/{{ s.id }}" method="post" data-confirm="Are you sure you want to remove this student from the class?" data-confirm-ok="Remove" data-confirm-class="btn-danger" style="margin:0;">
               <button type="submit" class="btn btn-ghost btn-sm" style="color:var(--red);">
