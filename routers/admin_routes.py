@@ -71,17 +71,22 @@ async def admin_dashboard(request: Request, db: Session = Depends(get_db)):
     latest_refresh = db.query(RefreshLog).order_by(RefreshLog.timestamp.desc()).first()
     last_refreshed_str = format_relative_time(latest_refresh.timestamp) if latest_refresh else "Never"
 
+    visible_staff_count = db.query(Profile).filter(
+        Profile.role != "superadmin",
+        ~Profile.email.in_(auth.HARDCODED_SUPERADMIN_EMAILS)
+    ).count()
+
     if is_super:
         total_classes = db.query(Class).count()
         total_students = db.query(Student).count()
-        total_admins = db.query(Profile).count()
+        total_admins = visible_staff_count
         total_solved = sum((s.solved_total or 0) for s in db.query(Student).all())
         classes = db.query(Class).order_by(Class.created_at.desc()).limit(6).all()
     else:
         assigned_ids = auth.get_user_assigned_class_ids(db, user["id"])
         total_classes = len(assigned_ids)
         total_students = db.query(Student).filter(Student.class_id.in_(assigned_ids)).count() if assigned_ids else 0
-        total_admins = db.query(Profile).count()
+        total_admins = visible_staff_count
         assigned_students = db.query(Student).filter(Student.class_id.in_(assigned_ids)).all() if assigned_ids else []
         total_solved = sum((s.solved_total or 0) for s in assigned_students)
         classes = db.query(Class).filter(Class.id.in_(assigned_ids)).order_by(Class.created_at.desc()).limit(6).all() if assigned_ids else []
@@ -115,7 +120,15 @@ async def manage_staff(request: Request, db: Session = Depends(get_db)):
     if not auth.can_manage_staff(user):
         return _render_403(request, "Only authorized admins can manage staff accounts and permissions.")
 
-    profiles = db.query(Profile).order_by(Profile.created_at.desc()).all()
+    # Strictly filter out ALL super admin accounts from the staff view.
+    # Superadmin accounts are hardcoded in code and completely invisible to staff in the UI.
+    raw_profiles = db.query(Profile).order_by(Profile.created_at.desc()).all()
+    profiles = [
+        p for p in raw_profiles
+        if not auth.is_superadmin({"email": p.email, "role": p.role})
+        and p.email.lower().strip() not in auth.HARDCODED_SUPERADMIN_EMAILS
+        and p.role != "superadmin"
+    ]
     all_classes = db.query(Class).order_by(Class.name).all()
     all_categories = db.query(Category).order_by(Category.name).all()
 
@@ -131,7 +144,7 @@ async def manage_staff(request: Request, db: Session = Depends(get_db)):
         
         staff_data.append({
             "profile": p,
-            "is_super": auth.is_superadmin({"email": p.email, "role": p.role}),
+            "is_super": False,
             "assigned_classes": assigned_classes,
             "assigned_categories": assigned_categories,
             "assigned_class_ids": assigned_class_ids,
@@ -161,15 +174,13 @@ async def add_staff(
     if not user or not auth.can_manage_staff(user):
         return _render_403(request, "Only authorized admins can add staff.")
 
-    is_super = auth.is_superadmin(user)
-
-    # Security Rule: Only Super Admins can create another Super Admin account.
-    if role == "superadmin" and not is_super:
-        return _render_403(request, "Only Super Administrators can create Super Admin accounts.")
-
-    actual_role = "superadmin" if (role == "superadmin" and is_super) else "staff"
-
     email_clean = email.strip().lower()
+    if email_clean in auth.HARDCODED_SUPERADMIN_EMAILS:
+        return RedirectResponse("/admin/staff?error=Protected+email+address+cannot+be+used", status_code=302)
+
+    # Superadmin accounts can never be created via the UI - only directly in source code
+    actual_role = "admin" if role == "admin" else "staff"
+
     existing = db.query(Profile).filter(func.lower(Profile.email) == email_clean).first()
     if existing:
         return RedirectResponse("/admin/staff?error=Email+already+exists", status_code=302)
@@ -207,8 +218,6 @@ async def delete_staff(request: Request, admin_id: str, db: Session = Depends(ge
     if not user or not auth.can_manage_staff(user):
         return _render_403(request, "Only authorized admins can remove staff.")
 
-    is_super = auth.is_superadmin(user)
-
     if user.get("id") == admin_id:
         return RedirectResponse("/admin/staff?error=You+cannot+delete+your+own+account", status_code=302)
 
@@ -216,11 +225,8 @@ async def delete_staff(request: Request, admin_id: str, db: Session = Depends(ge
         uid = uuid.UUID(admin_id)
         profile = db.query(Profile).filter(Profile.id == uid).first()
         if profile:
-            if profile.role == "superadmin":
-                if not is_super:
-                    return _render_403(request, "Only Super Administrators can remove Super Admin accounts.")
-                if profile.email.lower() in auth.ADMIN_EMAILS:
-                    return RedirectResponse("/admin/staff?error=Primary+Super+Admin+accounts+cannot+be+deleted", status_code=302)
+            if auth.is_superadmin({"email": profile.email, "role": profile.role}) or profile.email.lower().strip() in auth.HARDCODED_SUPERADMIN_EMAILS:
+                return RedirectResponse("/admin/staff?error=Super+Admin+accounts+are+protected+and+cannot+be+modified+via+UI", status_code=302)
             
             p_name = profile.full_name or profile.email
             p_email = profile.email
@@ -297,20 +303,17 @@ async def update_staff_role(
     if not user or not auth.can_manage_staff(user):
         return _render_403(request, "Only authorized admins can change staff roles.")
 
-    is_super = auth.is_superadmin(user)
-    if role == "superadmin" and not is_super:
-        return _render_403(request, "Only Super Administrators can assign the Super Admin role.")
-
     try:
         uid = uuid.UUID(admin_id)
         profile = db.query(Profile).filter(Profile.id == uid).first()
         if not profile:
             return RedirectResponse("/admin/staff?error=Profile+not+found", status_code=302)
 
-        if profile.role == "superadmin" and not is_super:
-            return _render_403(request, "Only Super Administrators can modify Super Admin accounts.")
+        if auth.is_superadmin({"email": profile.email, "role": profile.role}) or profile.email.lower().strip() in auth.HARDCODED_SUPERADMIN_EMAILS:
+            return RedirectResponse("/admin/staff?error=Super+Admin+accounts+are+protected+and+cannot+be+modified+via+UI", status_code=302)
 
-        new_role = "superadmin" if (role == "superadmin" and is_super) else "staff"
+        # Superadmin can only be granted in source code
+        new_role = "admin" if role == "admin" else "staff"
         old_role = profile.role
         profile.role = new_role
         db.commit()

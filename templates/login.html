@@ -4,13 +4,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Portal Sign In — KAHE Placement Cell</title>
-  <meta name="description" content="Sign in to your KAHE Placement Cell leaderboard portal">
+  <title>Portal Sign In — Karpagam Academy of Higher Education</title>
+  <meta name="description" content="Sign in to your Karpagam Academy of Higher Education placement leaderboard portal">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Outfit:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/static/css/main.css?v=4">
-  <link rel="icon" href="/static/logo.jpg">
+  <link rel="stylesheet" href="/static/css/main.css?v=6">
+  <link rel="icon" href="/static/logo.png">
   <script>
     if (localStorage.getItem('theme') === 'dark') {
       document.documentElement.setAttribute('data-theme', 'dark');
@@ -23,12 +23,12 @@
   <!-- Hero Panel -->
   <div class="auth-hero">
     <div class="auth-hero-logo">
-      <div class="brand-icon-box">
-        {{ icon('lightning', size="22px") }}
+      <div class="brand-logo-box" style="width: 52px; height: 52px; padding: 4px; border-radius: var(--r-md); box-shadow: var(--shadow-sm);">
+        <img src="/static/logo.png" alt="Karpagam Academy of Higher Education" class="brand-logo-img">
       </div>
       <div class="brand-name">
-        KAHE
-        <span>Placement Cell</span>
+        KARPAGAM
+        <span>Academy of Higher Education</span>
       </div>
     </div>
 
@@ -76,6 +76,15 @@
   <div class="auth-panel">
     <div class="auth-box">
       <div style="margin-bottom: 24px;">
+        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">
+          <div class="brand-logo-box" style="width: 44px; height: 44px; padding: 3px;">
+            <img src="/static/logo.png" alt="Karpagam Logo" class="brand-logo-img">
+          </div>
+          <div>
+            <div style="font-family: var(--font-display); font-size: var(--text-md); font-weight: 800; color: var(--text-primary); line-height: 1.2;">KARPAGAM</div>
+            <div style="font-size: var(--text-2xs); font-weight: 600; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.04em;">Academy of Higher Education</div>
+          </div>
+        </div>
         <h1 style="font-family:var(--font-display); font-size: var(--text-xl); font-weight: 800; margin-bottom: 6px; letter-spacing: -0.02em;">Portal Sign In</h1>
         <p style="color: var(--text-secondary); font-size: var(--text-sm);">Sign in to your instructor or admin portal account.</p>
       </div>
@@ -133,6 +142,6 @@
   </div>
 </div>
 
-<script src="/static/js/app.js?v=4"></script>
+<script src="/static/js/app.js?v=5"></script>
 </body>
 </html>

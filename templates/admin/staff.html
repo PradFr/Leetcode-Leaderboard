@@ -143,10 +143,8 @@
         <div class="form-group" style="margin:0;">
           <label class="form-label" for="add-staff-role">Role *</label>
           <select id="add-staff-role" class="form-control" name="role" required>
-            <option value="staff" selected>Staff Member (Scoped to assigned classes)</option>
-            {% if is_superadmin %}
-            <option value="superadmin">Super Admin (Full institute access)</option>
-            {% endif %}
+            <option value="staff" selected>Staff / Faculty (Scoped to assigned classes)</option>
+            <option value="admin">Class Admin (Full class management)</option>
           </select>
         </div>
         

@@ -5,38 +5,38 @@
 
 @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Outfit:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
 
-/* ─── Tokens (Light Theme Default — High Contrast & Crisp Hierarchy) ─────── */
+/* ─── Tokens (Light Theme Default — Karpagam Green & Charcoal Palette) ─────── */
 :root {
   /* Backgrounds */
-  --bg-canvas:   #edf2f7;
+  --bg-canvas:   #f4f6f8;
   --bg-surface:  #ffffff;
   --bg-card:     #ffffff;
-  --bg-overlay:  #e2e8f0;
+  --bg-overlay:  #e7ece9;
   --bg-input:    #ffffff;
   --bg-elevated: #ffffff;
 
   /* Borders */
-  --border:      #cbd5e1;
-  --border-muted:#e2e8f0;
-  --border-focus:#059669;
+  --border:      #d2d9d4;
+  --border-muted:#e3e8e5;
+  --border-focus:#367d43;
 
-  /* Brand / Accent */
-  --accent:      #059669;
-  --primary:     #059669;
-  --accent-dim:  rgba(5, 150, 105, 0.12);
-  --accent-glow: rgba(5, 150, 105, 0.28);
-  --accent-dark: #047857;
-  --accent-grad: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  /* Brand / Accent — Karpagam University Green & Charcoal */
+  --accent:      #367d43;
+  --primary:     #367d43;
+  --accent-dim:  rgba(54, 125, 67, 0.12);
+  --accent-glow: rgba(54, 125, 67, 0.28);
+  --accent-dark: #275d31;
+  --accent-grad: linear-gradient(135deg, #469a55 0%, #367d43 100%);
 
   /* High-Contrast Typography */
-  --text-primary:   #0f172a; /* Deep Obsidian Slate */
-  --text-secondary: #334155; /* Crisp Slate 700 */
-  --text-muted:     #475569; /* Clear Slate 600 */
+  --text-primary:   #212529; /* Deep Charcoal */
+  --text-secondary: #535353; /* Karpagam Logo Charcoal Gray */
+  --text-muted:     #6b7280;
   --text-inverse:   #ffffff;
 
   /* Status Tokens */
-  --green:   #059669;
-  --green-dim: rgba(5, 150, 105, 0.14);
+  --green:   #367d43;
+  --green-dim: rgba(54, 125, 67, 0.14);
   --red:     #dc2626;
   --red-dim: rgba(220, 38, 38, 0.14);
   --blue:    #2563eb;
@@ -47,7 +47,7 @@
   --amber-dim: rgba(217, 119, 6, 0.14);
 
   /* High-Contrast LeetCode Difficulty */
-  --easy:   #047857;
+  --easy:   #367d43;
   --medium: #b45309;
   --hard:   #b91c1c;
 
@@ -85,12 +85,12 @@
   --r-full: 9999px;
 
   /* Elevation Shadows */
-  --shadow-xs: 0 1px 2px rgba(15, 23, 42, 0.06);
-  --shadow-sm: 0 2px 4px rgba(15, 23, 42, 0.08);
-  --shadow-md: 0 4px 16px -2px rgba(15, 23, 42, 0.1), 0 2px 6px -1px rgba(15, 23, 42, 0.06);
-  --shadow-lg: 0 12px 32px -4px rgba(15, 23, 42, 0.12), 0 4px 12px -2px rgba(15, 23, 42, 0.06);
-  --shadow-xl: 0 20px 48px -8px rgba(15, 23, 42, 0.16), 0 8px 24px -4px rgba(15, 23, 42, 0.08);
-  --shadow-card: 0 1px 3px rgba(15, 23, 42, 0.08), 0 1px 2px -1px rgba(15, 23, 42, 0.04), 0 0 0 1px var(--border);
+  --shadow-xs: 0 1px 2px rgba(33, 37, 41, 0.06);
+  --shadow-sm: 0 2px 4px rgba(33, 37, 41, 0.08);
+  --shadow-md: 0 4px 16px -2px rgba(33, 37, 41, 0.1), 0 2px 6px -1px rgba(33, 37, 41, 0.06);
+  --shadow-lg: 0 12px 32px -4px rgba(33, 37, 41, 0.12), 0 4px 12px -2px rgba(33, 37, 41, 0.06);
+  --shadow-xl: 0 20px 48px -8px rgba(33, 37, 41, 0.16), 0 8px 24px -4px rgba(33, 37, 41, 0.08);
+  --shadow-card: 0 1px 3px rgba(33, 37, 41, 0.08), 0 1px 2px -1px rgba(33, 37, 41, 0.04), 0 0 0 1px var(--border);
   --shadow-glow: 0 0 24px var(--accent-glow);
   --shadow-accent: 0 0 0 3px var(--accent-glow);
 
@@ -100,38 +100,38 @@
   --t-smooth: 0.35s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-/* ─── Dark Theme Tokens (Obsidian & Emerald) ────────────────────────────── */
+/* ─── Dark Theme Tokens (Obsidian & Karpagam Emerald) ────────────────────── */
 html[data-theme="dark"] {
   /* Backgrounds */
-  --bg-canvas:   #090d0b;
-  --bg-surface:  #0f1713;
-  --bg-card:     #141f19;
-  --bg-overlay:  #1b2a22;
-  --bg-input:    #0a110d;
-  --bg-elevated: #18251e;
+  --bg-canvas:   #090e0b;
+  --bg-surface:  #0f1813;
+  --bg-card:     #14211a;
+  --bg-overlay:  #1b2d23;
+  --bg-input:    #0a130e;
+  --bg-elevated: #182820;
 
   /* Borders */
-  --border:      rgba(255, 255, 255, 0.08);
-  --border-muted:rgba(255, 255, 255, 0.04);
-  --border-focus:rgba(45, 212, 145, 0.5);
+  --border:      rgba(255, 255, 255, 0.09);
+  --border-muted:rgba(255, 255, 255, 0.05);
+  --border-focus:rgba(72, 178, 95, 0.5);
 
   /* Brand / Accent */
-  --accent:      #10b981;
-  --primary:     #10b981;
-  --accent-dim:  rgba(16, 185, 129, 0.16);
-  --accent-glow: rgba(16, 185, 129, 0.35);
-  --accent-dark: #059669;
-  --accent-grad: linear-gradient(135deg, #34d399 0%, #10b981 50%, #059669 100%);
+  --accent:      #48b25f;
+  --primary:     #48b25f;
+  --accent-dim:  rgba(72, 178, 95, 0.16);
+  --accent-glow: rgba(72, 178, 95, 0.35);
+  --accent-dark: #367d43;
+  --accent-grad: linear-gradient(135deg, #5ecb77 0%, #48b25f 50%, #367d43 100%);
 
   /* Text */
-  --text-primary:   #f8fafc;
-  --text-secondary: #94a3b8;
-  --text-muted:     #64748b;
-  --text-inverse:   #090d0b;
+  --text-primary:   #f4f8f5;
+  --text-secondary: #a3b3a8;
+  --text-muted:     #6f8376;
+  --text-inverse:   #090e0b;
 
   /* Status Tokens */
-  --green:   #10b981;
-  --green-dim: rgba(16, 185, 129, 0.15);
+  --green:   #48b25f;
+  --green-dim: rgba(72, 178, 95, 0.15);
   --red:     #f87171;
   --red-dim: rgba(248, 113, 113, 0.15);
   --blue:    #60a5fa;
@@ -142,7 +142,7 @@ html[data-theme="dark"] {
   --amber-dim: rgba(251, 191, 36, 0.15);
 
   /* Difficulty */
-  --easy:   #34d399;
+  --easy:   #5ecb77;
   --medium: #fbbf24;
   --hard:   #f87171;
 
@@ -236,7 +236,7 @@ a:hover {
 
 /* ── Sidebar ────────────────────────────────────────────── */
 .sidebar {
-  width: 260px;
+  width: 280px;
   flex-shrink: 0;
   background: var(--bg-surface);
   border-right: 1px solid var(--border);
@@ -250,7 +250,7 @@ a:hover {
 }
 
 .sidebar-brand {
-  padding: 24px 20px 20px;
+  padding: 22px 16px 20px;
   border-bottom: 1px solid var(--border-muted);
   display: flex;
   align-items: center;
@@ -269,24 +269,57 @@ a:hover {
   flex-shrink: 0;
 }
 
+.brand-logo-box {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--r-sm);
+  background: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 3px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border: 1px solid var(--border);
+  flex-shrink: 0;
+  overflow: hidden;
+  transition: transform var(--t-fast), box-shadow var(--t-fast);
+}
+
+.brand-logo-box:hover {
+  transform: scale(1.04);
+  box-shadow: 0 4px 14px var(--accent-glow);
+}
+
+.brand-logo-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+
 .brand-info {
   line-height: 1.2;
+  min-width: 0;
+  flex: 1;
 }
 
 .brand-title {
   font-family: var(--font-display);
   font-size: var(--text-md);
   font-weight: 800;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.01em;
   color: var(--text-primary);
+  white-space: nowrap;
 }
 
 .brand-subtitle {
-  font-size: var(--text-2xs);
-  font-weight: 600;
+  font-size: 0.65rem;
+  font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.02em;
   color: var(--text-muted);
+  white-space: nowrap;
+  display: block;
 }
 
 .sidebar-nav {
@@ -1325,11 +1358,15 @@ body.show-reg-nums .display-reg-text {
   inset: 0;
   background: rgba(0, 0, 0, 0.6);
   backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
   z-index: 95;
   display: none;
+  cursor: pointer;
+  touch-action: manipulation;
 }
 
-#mobile-overlay.active {
+#mobile-overlay.active,
+#mobile-overlay.open {
   display: block;
 }
 

@@ -272,20 +272,63 @@ document.addEventListener('DOMContentLoaded', () => {
   const sidebar = document.getElementById('app-sidebar') || document.querySelector('.sidebar');
   const mobileOverlay = document.getElementById('mobile-overlay');
 
+  function closeMobileSidebar() {
+    if (sidebar) sidebar.classList.remove('open');
+    if (mobileOverlay) {
+      mobileOverlay.classList.remove('open');
+      mobileOverlay.classList.remove('active');
+    }
+    document.body.classList.remove('sidebar-open');
+  }
+
+  function openMobileSidebar() {
+    if (sidebar) sidebar.classList.add('open');
+    if (mobileOverlay) {
+      mobileOverlay.classList.add('open');
+      mobileOverlay.classList.add('active');
+    }
+    document.body.classList.add('sidebar-open');
+  }
+
   if (mobileToggle && sidebar) {
     mobileToggle.addEventListener('click', (e) => {
       e.stopPropagation();
-      sidebar.classList.toggle('open');
-      if (mobileOverlay) mobileOverlay.classList.toggle('open');
+      if (sidebar.classList.contains('open')) {
+        closeMobileSidebar();
+      } else {
+        openMobileSidebar();
+      }
     });
   }
 
-  if (mobileOverlay && sidebar) {
-    mobileOverlay.addEventListener('click', () => {
-      sidebar.classList.remove('open');
-      mobileOverlay.classList.remove('open');
+  if (mobileOverlay) {
+    mobileOverlay.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      closeMobileSidebar();
+    });
+    mobileOverlay.addEventListener('touchend', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      closeMobileSidebar();
     });
   }
+
+  // Close sidebar when clicking on the empty space outside sidebar on mobile
+  document.addEventListener('click', (e) => {
+    if (sidebar && sidebar.classList.contains('open')) {
+      if (!sidebar.contains(e.target) && (!mobileToggle || !mobileToggle.contains(e.target))) {
+        closeMobileSidebar();
+      }
+    }
+  });
+
+  // Close sidebar on Escape key
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && sidebar && sidebar.classList.contains('open')) {
+      closeMobileSidebar();
+    }
+  });
 
   // Animate stat counters on page load
   animateStatCounters();
