@@ -28,6 +28,7 @@
             Select Test Sheet
           </label>
           <select id="testSelector" class="form-control" onchange="showTest(this.value)">
+            <option value="aggregate" selected>Aggregate Results (Overall Performance across {{ tests|length }} Tests)</option>
             {% for test in tests %}
               <option value="{{ test.id }}">{{ test.test_name }} (Uploaded: {{ test.upload_date.strftime('%Y-%m-%d %H:%M') }})</option>
             {% endfor %}
@@ -46,6 +47,80 @@
           </div>
         </div>
 
+      </div>
+    </div>
+
+    <!-- Aggregate Results Container (Default View) -->
+    <div id="test-container-aggregate" class="test-container card" style="display: block; overflow-x: auto; padding: 0;">
+      <div style="padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+        <div>
+          <h3 class="section-title" style="margin: 0; font-size:var(--text-md); display:flex; align-items:center; gap:8px;">
+            <span style="color:var(--accent);">{{ icon('trophy') }}</span> Aggregate Results
+          </h3>
+          <span style="font-size: var(--text-2xs); color: var(--text-muted);">
+            Overall percentage performance across all {{ tests|length }} tests · Mapped by Register Number
+          </span>
+        </div>
+        <span style="font-size: var(--text-2xs); padding: 4px 10px; border-radius: var(--r-full); background: var(--bg-overlay); border: 1px solid var(--border); color: var(--text-secondary); font-weight:700;">
+          <span class="record-count font-mono">{{ aggregate.rows|length if aggregate else 0 }}</span> Students
+        </span>
+      </div>
+
+      <div class="table-wrap" style="border:none; border-radius:0;">
+        <table class="table">
+          <thead>
+            <tr>
+              <th style="width: 54px;">Rank</th>
+              <th>Register Number</th>
+              <th>Student Name</th>
+              {% if aggregate and aggregate.tests %}
+                {% for t in aggregate.tests %}
+                  <th class="num-col" title="{{ t.name }}">{{ t.name }} (%)</th>
+                {% endfor %}
+              {% endif %}
+              <th class="num-col" style="color:var(--accent);">Overall Average (%)</th>
+              <th class="num-col">Attended</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% if aggregate and aggregate.rows %}
+              {% for row in aggregate.rows %}
+              <tr>
+                <td>
+                  <span class="rank-badge rank-{{ row.rank if row.rank <= 3 else 'n' }}">{{ row.rank }}</span>
+                </td>
+                <td class="font-mono" style="font-weight:600; color:var(--text-primary);">
+                  {{ row.reg_no }}
+                </td>
+                <td style="font-weight:600; color:var(--text-primary);">
+                  {{ row.name }}
+                </td>
+                {% for t in aggregate.tests %}
+                  <td class="num-col">
+                    {% if t.id in row.scores %}
+                      <span class="font-mono" style="font-weight:600;">{{ "%.2f"|format(row.scores[t.id]) }}%</span>
+                    {% else %}
+                      <span class="font-mono" style="color:var(--text-muted); font-size:var(--text-xs);">0.00% <span style="color:var(--red); font-size:var(--text-2xs); font-weight:700;">(Absent)</span></span>
+                    {% endif %}
+                  </td>
+                {% endfor %}
+                <td class="num-col">
+                  <strong class="font-mono" style="color:var(--accent);">{{ "%.2f"|format(row.average) }}%</strong>
+                </td>
+                <td class="num-col font-mono" style="font-size:var(--text-xs); color:var(--text-secondary);">
+                  {{ row.attended }} / {{ row.total_tests }}
+                </td>
+              </tr>
+              {% endfor %}
+            {% else %}
+              <tr>
+                <td colspan="{{ 5 + (aggregate.tests|length if aggregate else 0) }}" style="text-align:center; padding:32px; color:var(--text-muted);">
+                  No aggregate data available.
+                </td>
+              </tr>
+            {% endif %}
+          </tbody>
+        </table>
       </div>
     </div>
 

@@ -19,7 +19,8 @@ from database import (
 )
 from utils import (
     fetch_leetcode_stats, format_relative_time,
-    get_inactivity_status, get_inactivity_days
+    get_inactivity_status, get_inactivity_days,
+    calculate_aggregate_test_results
 )
 
 router = APIRouter(prefix="/admin")
@@ -508,8 +509,40 @@ async def create_class(
     return RedirectResponse("/admin/classes", status_code=302)
 
 
+@router.get("/classes/{class_id}/menu", response_class=HTMLResponse)
+async def admin_class_menu_redirect(request: Request, class_id: str):
+    return RedirectResponse(f"/admin/classes/{class_id}", status_code=302)
+
+
 @router.get("/classes/{class_id}", response_class=HTMLResponse)
-async def class_detail(request: Request, class_id: str, db: Session = Depends(get_db)):
+async def class_entry(request: Request, class_id: str, tab: Optional[str] = Query(None), db: Session = Depends(get_db)):
+    user = _get_admin(request)
+    if not user:
+        return RedirectResponse("/login", status_code=302)
+
+    if not auth.can_access_class(db, user, class_id):
+        return _render_403(request, "You are not assigned to manage this class.")
+
+    cls = db.query(Class).filter(Class.id == class_id).first()
+    if not cls:
+        return RedirectResponse("/admin/classes", status_code=302)
+
+    # If an existing bookmark or query specifies tab, cleanly route to dedicated section
+    if tab == "tests":
+        return RedirectResponse(f"/admin/classes/{class_id}/tests", status_code=302)
+    elif tab == "leaderboard":
+        return RedirectResponse(f"/admin/classes/{class_id}/leaderboard", status_code=302)
+
+    # When entering the class, display the separate choosable options hub!
+    return templates.TemplateResponse("admin/class_menu.html", {
+        "request": request,
+        "user": user,
+        "cls": cls,
+    })
+
+
+@router.get("/classes/{class_id}/leaderboard", response_class=HTMLResponse)
+async def class_leaderboard(request: Request, class_id: str, db: Session = Depends(get_db)):
     user = _get_admin(request)
     if not user:
         return RedirectResponse("/login", status_code=302)
@@ -544,7 +577,6 @@ async def class_detail(request: Request, class_id: str, db: Session = Depends(ge
     base_url = str(request.base_url).rstrip("/")
     invite_link = f"{base_url}/join/{invite.token}" if invite else None
 
-    tests = db.query(TestResult).filter(TestResult.class_id == class_id).order_by(TestResult.upload_date.desc()).all()
     latest_refresh = db.query(RefreshLog).order_by(RefreshLog.timestamp.desc()).first()
     last_refreshed_str = format_relative_time(latest_refresh.timestamp) if latest_refresh else "Never"
 
@@ -556,10 +588,36 @@ async def class_detail(request: Request, class_id: str, db: Session = Depends(ge
         "categories": categories,
         "leaderboard": leaderboard,
         "invite_link": invite_link,
-        "tests": tests,
         "latest_refresh": latest_refresh,
         "last_refreshed_str": last_refreshed_str,
         "inactive_count": inactive_count,
+    })
+
+
+@router.get("/classes/{class_id}/tests", response_class=HTMLResponse)
+async def class_tests(request: Request, class_id: str, db: Session = Depends(get_db)):
+    user = _get_admin(request)
+    if not user:
+        return RedirectResponse("/login", status_code=302)
+
+    if not auth.can_access_class(db, user, class_id):
+        return _render_403(request, "You are not assigned to manage this class.")
+
+    cls = db.query(Class).filter(Class.id == class_id).first()
+    if not cls:
+        return RedirectResponse("/admin/classes", status_code=302)
+
+    members = db.query(Student).filter(Student.class_id == class_id).all()
+    tests = db.query(TestResult).filter(TestResult.class_id == class_id).order_by(TestResult.upload_date.desc()).all()
+    aggregate = calculate_aggregate_test_results(tests, members)
+
+    return templates.TemplateResponse("admin/class_tests.html", {
+        "request": request,
+        "user": user,
+        "is_superadmin": auth.is_superadmin(user),
+        "cls": cls,
+        "tests": tests,
+        "aggregate": aggregate,
     })
 
 
@@ -776,7 +834,7 @@ async def upload_test(
         return _render_403(request, "You do not have access to this class.")
 
     if not file.filename.endswith(('.xlsx', '.xls', '.csv')):
-        return RedirectResponse(f"/admin/classes/{class_id}?error=Invalid+file+format", status_code=302)
+        return RedirectResponse(f"/admin/classes/{class_id}/tests?error=Invalid+file+format", status_code=302)
 
     try:
         contents = await file.read()
@@ -829,11 +887,11 @@ async def upload_test(
             description=f"Uploaded test results '{test_name}' ({len(data)} rows) for class '{cls_name}'"
         )
 
-        return RedirectResponse(f"/admin/classes/{class_id}?success=Test+uploaded", status_code=302)
+        return RedirectResponse(f"/admin/classes/{class_id}/tests?success=Test+uploaded", status_code=302)
 
     except Exception as e:
         print(f"Error parsing file: {e}")
-        return RedirectResponse(f"/admin/classes/{class_id}?error=Could+not+parse+file", status_code=302)
+        return RedirectResponse(f"/admin/classes/{class_id}/tests?error=Could+not+parse+file", status_code=302)
 
 
 @router.post("/classes/{class_id}/tests/{test_id}/delete")
@@ -860,7 +918,7 @@ async def delete_test(request: Request, class_id: str, test_id: str, db: Session
             target_id=test_id,
             description=f"Deleted test '{t_name}' from class '{cls_name}'"
         )
-    return RedirectResponse(f"/admin/classes/{class_id}?success=Test+deleted", status_code=302)
+    return RedirectResponse(f"/admin/classes/{class_id}/tests?success=Test+deleted", status_code=302)
 
 
 # ─── Refresh Stats (Class-Level & System-Wide) ────────────────────────────────

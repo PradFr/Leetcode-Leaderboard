@@ -5,11 +5,16 @@
 {% block page_title %}
   <a href="/admin/classes" style="color:var(--text-muted);text-decoration:none;font-weight:500">Classes</a>
   <span style="color:var(--border);margin:0 6px">/</span>
-  {{ cls.name }}
+  <a href="/admin/classes/{{ cls.id }}" style="color:var(--text-muted);text-decoration:none;font-weight:500">{{ cls.name }}</a>
+  <span style="color:var(--border);margin:0 6px">/</span>
+  Leaderboard
 {% endblock %}
 
 {% block topbar_actions %}
   <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+    <a href="/admin/classes/{{ cls.id }}" class="btn btn-secondary btn-sm" style="display:inline-flex; align-items:center; gap:6px;">
+      {{ icon('arrow-left', size="13px") }} Back to Options
+    </a>
     {% if last_refreshed_str %}
     <span style="font-size:var(--text-xs); color:var(--text-secondary); margin-right:4px;">
       Last refreshed: <strong style="color:var(--text-primary)">{{ last_refreshed_str }}</strong>
@@ -103,63 +108,6 @@
       {{ icon('plus', size="14px") }} Add Student Manually
     </button>
   </div>
-</div>
-
-<!-- Test Results Management Section -->
-<div class="card" style="margin-bottom: 28px;">
-  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap:wrap; gap:10px;">
-    <div>
-      <h2 class="section-title" style="display:flex; align-items:center; gap:8px;">
-        <span style="color:var(--accent);">{{ icon('file-text') }}</span> Uploaded Test Results
-      </h2>
-      <p style="font-size:var(--text-xs); color:var(--text-secondary); margin-top:2px;">Upload and track structured Excel test score sheets for this cohort.</p>
-    </div>
-    <button type="button" class="btn btn-primary btn-sm" data-open-modal="modal-upload-test">
-      {{ icon('upload', size="14px") }} Upload Test File
-    </button>
-  </div>
-  
-  {% if tests %}
-  <div class="table-wrap" style="border:none; border-radius:0;">
-    <table>
-      <thead>
-        <tr>
-          <th>Test Name</th>
-          <th>Uploaded Date</th>
-          <th>Visibility Expiry</th>
-          <th style="text-align: right; padding-right: 20px;">Actions</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for test in tests %}
-        <tr>
-          <td style="font-weight:700; color:var(--text-primary);">{{ test.test_name }}</td>
-          <td style="color:var(--text-secondary); font-size:var(--text-xs);">{{ test.upload_date.strftime('%Y-%m-%d %H:%M') }}</td>
-          <td style="color:var(--text-secondary); font-size:var(--text-xs);">
-            {% if test.expires_at %}
-              <span style="display:inline-block; padding:3px 8px; border-radius:var(--r-full); font-size:var(--text-2xs); background:var(--bg-overlay); border:1px solid var(--border); font-weight:600;">{{ test.expires_at.strftime('%Y-%m-%d %H:%M') }}</span>
-            {% else %}
-              <span style="display:inline-block; padding:3px 8px; border-radius:var(--r-full); font-size:var(--text-2xs); background:var(--accent-dim); color:var(--accent); font-weight:700;">Permanent</span>
-            {% endif %}
-          </td>
-          <td style="text-align: right;">
-            <form action="/admin/classes/{{ cls.id }}/tests/{{ test.id }}/delete" method="post" style="display:inline;"
-                  data-confirm="Delete test '{{ test.test_name }}'?" data-confirm-ok="Delete" data-confirm-class="btn-danger">
-              <button type="submit" class="btn btn-ghost btn-sm" style="color:var(--red);">
-                {{ icon('trash', size="13px") }} Delete
-              </button>
-            </form>
-          </td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </div>
-  {% else %}
-  <div class="empty-state" style="padding: 24px 16px; border: 1px dashed var(--border); border-radius: var(--r-sm);">
-    <p style="color:var(--text-muted); font-size:var(--text-xs); margin:0;">No test results uploaded for this class yet.</p>
-  </div>
-  {% endif %}
 </div>
 
 <!-- Leaderboard Table Card -->
@@ -412,39 +360,6 @@
   </div>
 </div>
 
-<!-- Upload Test Modal -->
-<div class="modal-backdrop" id="modal-upload-test">
-  <div class="modal">
-    <div class="modal-header">
-      <h3 class="modal-title">Upload Test Results</h3>
-      <button class="modal-close" data-close-modal="modal-upload-test" title="Close">{{ icon('x') }}</button>
-    </div>
-    <form action="/admin/classes/{{ cls.id }}/tests/upload" method="post" enctype="multipart/form-data">
-      <div class="form-group">
-        <label class="form-label">Test Name *</label>
-        <input class="form-control" type="text" name="test_name" placeholder="e.g. Weekly DSA Contest 04" required>
-      </div>
-      <div class="form-group">
-        <label class="form-label">Duration / Retention</label>
-        <select class="form-control" name="duration">
-          <option value="perm">Permanent</option>
-          <option value="1w">1 Week</option>
-          <option value="2w">2 Weeks</option>
-          <option value="1m">1 Month</option>
-        </select>
-      </div>
-      <div class="form-group">
-        <label class="form-label">Excel or CSV File *</label>
-        <input class="form-control" type="file" name="file" accept=".xlsx,.xls,.csv" required>
-      </div>
-      <div style="display:flex; gap:10px; justify-content:flex-end; margin-top:16px;">
-        <button type="button" class="btn btn-secondary" data-close-modal="modal-upload-test">Cancel</button>
-        <button type="submit" class="btn btn-primary">Upload Test</button>
-      </div>
-    </form>
-  </div>
-</div>
-
 <!-- Edit Class Modal -->
 <div class="modal-backdrop" id="modal-edit-class">
   <div class="modal">
@@ -569,6 +484,7 @@ document.getElementById('add-student-form').addEventListener('submit', async fun
     btn.textContent = 'Add Student';
   }
 });
+
 </script>
 
 {% endblock %}

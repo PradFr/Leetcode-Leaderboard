@@ -106,7 +106,7 @@
 {% if classes %}
 <div class="classes-grid" id="classes-grid-container" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(320px, 1fr)); gap:20px;">
   {% for item in classes %}
-  <a href="/admin/classes/{{ item.cls.id }}" class="card class-card" data-category-id="{{ item.cls.category_id or '' }}" style="text-decoration:none; color:inherit; display:flex; flex-direction:column; gap:12px;">
+  <a href="/admin/classes/{{ item.cls.id }}/menu" class="card class-card" data-category-id="{{ item.cls.category_id or '' }}" style="text-decoration:none; color:inherit; display:flex; flex-direction:column; gap:12px;">
     <div style="display:flex; align-items:center; gap:12px;">
       <div class="stat-icon" style="background:var(--accent-dim); color:var(--accent); width:38px; height:38px;">
         {{ icon('classes', size="18px") }}

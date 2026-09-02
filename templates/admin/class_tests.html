@@ -1,0 +1,389 @@
+{% extends "base.html" %}
+{% from "components/icons.html" import icon %}
+
+{% block title %}{{ cls.name }} — Test Results — KAHE Placement Cell{% endblock %}
+{% block page_title %}
+  <a href="/admin/classes" style="color:var(--text-muted);text-decoration:none;font-weight:500">Classes</a>
+  <span style="color:var(--border);margin:0 6px">/</span>
+  <a href="/admin/classes/{{ cls.id }}" style="color:var(--text-muted);text-decoration:none;font-weight:500">{{ cls.name }}</a>
+  <span style="color:var(--border);margin:0 6px">/</span>
+  Test Results
+{% endblock %}
+
+{% block topbar_actions %}
+  <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+    <a href="/admin/classes/{{ cls.id }}" class="btn btn-secondary btn-sm" style="display:inline-flex; align-items:center; gap:6px;">
+      {{ icon('arrow-left', size="13px") }} Back to Options
+    </a>
+    <a href="/class/{{ cls.id }}/tests" target="_blank" class="btn btn-secondary btn-sm" style="display:inline-flex; align-items:center; gap:6px;" title="Open student public view">
+      {{ icon('external', size="13px") }} Student View
+    </a>
+    <button type="button" class="btn btn-primary btn-sm" data-open-modal="modal-upload-test" style="display:inline-flex; align-items:center; gap:6px;">
+      {{ icon('upload', size="14px") }} Upload Test File
+    </button>
+  </div>
+{% endblock %}
+
+{% block content %}
+
+<!-- Header Card -->
+<div class="card" style="margin-bottom: 24px;">
+  <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+    <div>
+      <h2 class="section-title" style="display:flex; align-items:center; gap:8px; margin:0 0 4px 0;">
+        <span style="color:var(--accent);">{{ icon('file-text') }}</span> Uploaded Test Results
+      </h2>
+      <p style="font-size:var(--text-xs); color:var(--text-secondary); margin:0;">
+        Upload and view structured Excel/CSV test score sheets for <strong>{{ cls.name }}</strong>.
+      </p>
+    </div>
+    <div style="display:flex; align-items:center; gap:8px;">
+      <span style="font-size: var(--text-2xs); padding: 4px 10px; border-radius: var(--r-full); background: var(--bg-overlay); border: 1px solid var(--border); color: var(--text-secondary); font-weight:700;">
+        <span class="font-mono">{{ tests|length }}</span> Sheet{{ 's' if tests|length != 1 }} Uploaded
+      </span>
+      <button type="button" class="btn btn-primary btn-sm" data-open-modal="modal-upload-test">
+        {{ icon('upload', size="14px") }} Upload Test File
+      </button>
+    </div>
+  </div>
+</div>
+
+{% if tests %}
+<!-- Controls Toolbar (Test Sheet Selector & Live Search) -->
+<div class="card" style="padding: 18px 24px; margin-bottom: 20px;">
+  <div style="display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-end; justify-content: space-between;">
+    <div style="flex: 1; min-width: 260px;">
+      <label for="adminTestSelector" class="form-label">Select Test Sheet</label>
+      <select id="adminTestSelector" class="form-control" onchange="showAdminTest(this.value)">
+        <option value="aggregate" selected>Aggregate Results (Overall Performance across {{ tests|length }} Tests)</option>
+        {% for test in tests %}
+          <option value="{{ test.id }}">{{ test.test_name }} (Uploaded: {{ test.upload_date.strftime('%Y-%m-%d %H:%M') }})</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div style="flex: 1.2; min-width: 260px;">
+      <label for="adminTestSearchInput" class="form-label">Search Records</label>
+      <div class="search-box-wrap" style="width: 100%;">
+        <span class="search-box-icon">{{ icon('search', size="14px") }}</span>
+        <input type="text" id="adminTestSearchInput" class="search-box-input" placeholder="Search by name, roll number, score, etc..." oninput="filterAdminTestTable(this.value)">
+        <button type="button" id="adminTestSearchClear" class="search-box-clear" title="Clear search" onclick="clearAdminTestSearch()">{{ icon('x', size="13px") }}</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Aggregate Results Container (Default View) -->
+<div id="admin-test-container-aggregate" class="admin-test-container card" style="display: block; overflow-x: auto; padding: 0; margin-bottom: 24px;">
+  <div style="padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+    <div>
+      <h3 class="section-title" style="margin: 0; font-size:var(--text-md); display:flex; align-items:center; gap:8px;">
+        <span style="color:var(--accent);">{{ icon('trophy') }}</span> Aggregate Results
+      </h3>
+      <span style="font-size: var(--text-2xs); color: var(--text-muted);">
+        Overall percentage performance across all {{ tests|length }} tests · Mapped by Register Number · Absences penalized
+      </span>
+    </div>
+    <span style="font-size: var(--text-2xs); padding: 4px 10px; border-radius: var(--r-full); background: var(--bg-overlay); border: 1px solid var(--border); color: var(--text-secondary); font-weight:700;">
+      <span class="record-count font-mono">{{ aggregate.rows|length if aggregate else 0 }}</span> Students
+    </span>
+  </div>
+
+  <div class="table-wrap" style="border:none; border-radius:0;">
+    <table class="table">
+      <thead>
+        <tr>
+          <th style="width: 54px;">Rank</th>
+          <th>Register Number</th>
+          <th>Student Name</th>
+          {% if aggregate and aggregate.tests %}
+            {% for t in aggregate.tests %}
+              <th class="num-col" title="{{ t.name }}">{{ t.name }} (%)</th>
+            {% endfor %}
+          {% endif %}
+          <th class="num-col" style="color:var(--accent);">Overall Average (%)</th>
+          <th class="num-col">Attended</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% if aggregate and aggregate.rows %}
+          {% for row in aggregate.rows %}
+          <tr>
+            <td>
+              <span class="rank-badge rank-{{ row.rank if row.rank <= 3 else 'n' }}">{{ row.rank }}</span>
+            </td>
+            <td class="font-mono" style="font-weight:600; color:var(--text-primary);">
+              {{ row.reg_no }}
+            </td>
+            <td style="font-weight:600; color:var(--text-primary);">
+              {{ row.name }}
+            </td>
+            {% for t in aggregate.tests %}
+              <td class="num-col">
+                {% if t.id in row.scores %}
+                  <span class="font-mono" style="font-weight:600;">{{ "%.2f"|format(row.scores[t.id]) }}%</span>
+                {% else %}
+                  <span class="font-mono" style="color:var(--text-muted); font-size:var(--text-xs);">0.00% <span style="color:var(--red); font-size:var(--text-2xs); font-weight:700;">(Absent)</span></span>
+                {% endif %}
+              </td>
+            {% endfor %}
+            <td class="num-col">
+              <strong class="font-mono" style="color:var(--accent);">{{ "%.2f"|format(row.average) }}%</strong>
+            </td>
+            <td class="num-col font-mono" style="font-size:var(--text-xs); color:var(--text-secondary);">
+              {{ row.attended }} / {{ row.total_tests }}
+            </td>
+          </tr>
+          {% endfor %}
+        {% else %}
+          <tr>
+            <td colspan="{{ 5 + (aggregate.tests|length if aggregate else 0) }}" style="text-align:center; padding:32px; color:var(--text-muted);">
+              No aggregate data available.
+            </td>
+          </tr>
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Individual Test Data Containers -->
+{% for test in tests %}
+<div id="admin-test-container-{{ test.id }}" class="admin-test-container card" style="display: none; overflow-x: auto; padding: 0; margin-bottom: 24px;">
+  <div style="padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+    <div>
+      <h3 class="section-title" style="margin: 0; font-size:var(--text-md);">{{ test.test_name }}</h3>
+      <span style="font-size: var(--text-2xs); color: var(--text-muted);">
+        Uploaded on {{ test.upload_date.strftime('%b %d, %Y at %I:%M %p') }}
+        {% if test.expires_at %}
+          · <span style="color:var(--text-secondary);">Expires: {{ test.expires_at.strftime('%Y-%m-%d %H:%M') }}</span>
+        {% else %}
+          · <span style="color:var(--accent); font-weight:600;">Permanent</span>
+        {% endif %}
+      </span>
+    </div>
+    <div style="display: flex; align-items: center; gap: 10px;">
+      <span style="font-size: var(--text-2xs); padding: 4px 10px; border-radius: var(--r-full); background: var(--bg-overlay); border: 1px solid var(--border); color: var(--text-secondary); font-weight:700;">
+        <span class="record-count font-mono">{{ test.data|length }}</span> Records
+      </span>
+      <form action="/admin/classes/{{ cls.id }}/tests/{{ test.id }}/delete" method="post" style="display:inline; margin:0;"
+            data-confirm="Delete test '{{ test.test_name }}'?" data-confirm-ok="Delete" data-confirm-class="btn-danger">
+        <button type="submit" class="btn btn-ghost btn-sm" style="color:var(--red);">
+          {{ icon('trash', size="13px") }} Delete
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <div class="table-wrap" style="border:none; border-radius:0;">
+    <table class="table">
+      <thead>
+        <tr>
+          {% for col in test.columns %}
+            <th>{{ col }}</th>
+          {% endfor %}
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in test.data %}
+        <tr>
+          {% for col in test.columns %}
+            <td style="font-size: var(--text-sm);">
+              {% if row[col] is number and row[col] is float %}
+                <span class="font-mono">{{ "%.2f"|format(row[col]) }}</span>
+              {% else %}
+                {{ row[col] }}
+              {% endif %}
+            </td>
+          {% endfor %}
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endfor %}
+
+<!-- Summary Table of All Uploaded Test Sheets -->
+<div class="card" style="padding: 0; overflow: hidden;">
+  <div style="padding: 16px 20px; border-bottom: 1px solid var(--border);">
+    <h3 class="section-title" style="margin: 0; font-size:var(--text-sm);">All Uploaded Sheets ({{ tests|length }})</h3>
+  </div>
+  <div class="table-wrap" style="border:none; border-radius:0;">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Test Name</th>
+          <th>Uploaded Date</th>
+          <th>Records</th>
+          <th>Visibility Expiry</th>
+          <th style="text-align: right; padding-right: 20px;">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for test in tests %}
+        <tr>
+          <td style="font-weight: 600; color: var(--text-primary);">
+            {{ test.test_name }}
+          </td>
+          <td style="font-size: var(--text-xs); color: var(--text-secondary);">
+            {{ test.upload_date.strftime('%b %d, %Y %I:%M %p') }}
+          </td>
+          <td class="font-mono" style="font-size: var(--text-xs);">
+            {{ test.data|length }} records
+          </td>
+          <td style="font-size: var(--text-xs);">
+            {% if test.expires_at %}
+              <span style="color:var(--text-secondary);">{{ test.expires_at.strftime('%b %d, %Y %I:%M %p') }}</span>
+            {% else %}
+              <span style="color:var(--green); font-weight:600;">Permanent</span>
+            {% endif %}
+          </td>
+          <td style="text-align: right; padding-right: 20px;">
+            <div style="display: inline-flex; align-items: center; gap: 8px;">
+              <button type="button" class="btn btn-secondary btn-sm" onclick="selectAndShowAdminTest('{{ test.id }}')">
+                {{ icon('eye', size="12px") }} View Sheet
+              </button>
+              <form action="/admin/classes/{{ cls.id }}/tests/{{ test.id }}/delete" method="post" style="display:inline; margin:0;"
+                    data-confirm="Are you sure you want to delete '{{ test.test_name }}'?" data-confirm-ok="Delete" data-confirm-class="btn-danger">
+                <button type="submit" class="btn btn-ghost btn-sm" style="color:var(--red);">
+                  {{ icon('trash', size="12px") }}
+                </button>
+              </form>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% else %}
+<!-- Empty State -->
+<div class="card" style="text-align:center; padding: 48px 24px;">
+  <div class="empty-icon-wrap" style="margin: 0 auto 12px auto; width: 44px; height: 44px;">
+    {{ icon('file-text', size="22px") }}
+  </div>
+  <h3 style="font-family:var(--font-display); font-size:var(--text-md); font-weight:700; margin-bottom: 4px;">No test results uploaded yet</h3>
+  <p style="color:var(--text-secondary); font-size:var(--text-xs); margin:0 0 16px 0;">Upload an Excel (.xlsx, .xls) or CSV sheet to record test scores for this class.</p>
+  <button type="button" class="btn btn-primary btn-sm" data-open-modal="modal-upload-test">
+    {{ icon('upload', size="14px") }} Upload First Test
+  </button>
+</div>
+{% endif %}
+
+<!-- Upload Test Modal -->
+<div class="modal-backdrop" id="modal-upload-test">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 class="modal-title">Upload Test Results</h3>
+      <button class="modal-close" data-close-modal="modal-upload-test" title="Close">{{ icon('x') }}</button>
+    </div>
+    <form action="/admin/classes/{{ cls.id }}/tests/upload" method="post" enctype="multipart/form-data">
+      <div class="form-group">
+        <label class="form-label">Test Name *</label>
+        <input class="form-control" type="text" name="test_name" placeholder="e.g. Weekly DSA Contest 04" required>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Duration / Retention</label>
+        <select class="form-control" name="duration">
+          <option value="perm">Permanent</option>
+          <option value="1w">1 Week</option>
+          <option value="2w">2 Weeks</option>
+          <option value="1m">1 Month</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Excel or CSV File *</label>
+        <input class="form-control" type="file" name="file" accept=".xlsx,.xls,.csv" required>
+      </div>
+      <div style="display:flex; gap:10px; justify-content:flex-end; margin-top:16px;">
+        <button type="button" class="btn btn-secondary" data-close-modal="modal-upload-test">Cancel</button>
+        <button type="submit" class="btn btn-primary">Upload Test</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+function selectAndShowAdminTest(testId) {
+  const selector = document.getElementById('adminTestSelector');
+  if (selector) {
+    selector.value = testId;
+  }
+  showAdminTest(testId);
+  const container = document.getElementById('admin-test-container-' + testId);
+  if (container) {
+    container.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+}
+
+function showAdminTest(testId) {
+  document.querySelectorAll('.admin-test-container').forEach(el => el.style.display = 'none');
+  if (testId) {
+    const container = document.getElementById('admin-test-container-' + testId);
+    if (container) {
+      container.style.display = 'block';
+      const searchInput = document.getElementById('adminTestSearchInput');
+      if (searchInput && searchInput.value) {
+        filterAdminTestTable(searchInput.value);
+      }
+    }
+  }
+}
+
+function filterAdminTestTable(query) {
+  const activeContainer = Array.from(document.querySelectorAll('.admin-test-container')).find(el => el.style.display !== 'none');
+  const clearBtn = document.getElementById('adminTestSearchClear');
+  if (clearBtn) {
+    clearBtn.style.display = query.trim() ? 'block' : 'none';
+  }
+  if (!activeContainer) return;
+  const q = query.trim().toLowerCase();
+  const rows = activeContainer.querySelectorAll('tbody tr:not(.no-results-row)');
+  let matchCount = 0;
+  rows.forEach(row => {
+    const text = row.textContent.toLowerCase();
+    if (!q || text.includes(q)) {
+      row.style.display = '';
+      matchCount++;
+    } else {
+      row.style.display = 'none';
+    }
+  });
+
+  let noResultsRow = activeContainer.querySelector('.no-results-row');
+  if (matchCount === 0 && q) {
+    if (!noResultsRow) {
+      const colCount = activeContainer.querySelectorAll('thead th').length || 1;
+      noResultsRow = document.createElement('tr');
+      noResultsRow.className = 'no-results-row';
+      noResultsRow.innerHTML = `<td colspan="${colCount}" style="text-align: center; padding: 32px 16px; color: var(--text-secondary); font-size: var(--text-xs);">No matching records found for "<strong>${query}</strong>"</td>`;
+      activeContainer.querySelector('tbody').appendChild(noResultsRow);
+    } else {
+      noResultsRow.style.display = '';
+      noResultsRow.querySelector('td').innerHTML = `No matching records found for "<strong>${query}</strong>"`;
+    }
+  } else if (noResultsRow) {
+    noResultsRow.style.display = 'none';
+  }
+}
+
+function clearAdminTestSearch() {
+  const input = document.getElementById('adminTestSearchInput');
+  if (input) {
+    input.value = '';
+    filterAdminTestTable('');
+    input.focus();
+  }
+}
+
+window.addEventListener('DOMContentLoaded', () => {
+  const selector = document.getElementById('adminTestSelector');
+  if (selector && selector.value) {
+    showAdminTest(selector.value);
+  }
+});
+</script>
+
+{% endblock %}

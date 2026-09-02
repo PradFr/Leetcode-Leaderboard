@@ -5,7 +5,7 @@ from fastapi.responses import RedirectResponse, HTMLResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 from database import get_db, Class, Invite, Student, Category, TestResult
-from utils import fetch_leetcode_stats
+from utils import fetch_leetcode_stats, calculate_aggregate_test_results
 
 router = APIRouter()
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -79,12 +79,15 @@ async def public_class_tests(request: Request, class_id: str, db: Session = Depe
         TestResult.class_id == class_id,
         or_(TestResult.expires_at == None, TestResult.expires_at >= now)
     ).order_by(TestResult.upload_date.desc()).all()
+    members = db.query(Student).filter(Student.class_id == class_id).all()
+    aggregate = calculate_aggregate_test_results(active_tests, members)
 
     return templates.TemplateResponse("public_views/test_results.html", {
         "request": request,
         "user": user,
         "cls": cls,
         "tests": active_tests,
+        "aggregate": aggregate,
     })
 
 
